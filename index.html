@@ -1,1 +1,851 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Financeiro com Supabase</title>
+    
+    <!-- Tailwind CSS (Versão Completa - CDN Play) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Supabase JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+        }
+        .spinner {
+            border-top-color: #3b82f6; /* Azul primário */
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #confirmation-modal {
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 antialiased">
+
+    <!-- Modal de Confirmação -->
+    <div id="confirmation-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden opacity-0">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-sm mx-4">
+            <h3 id="modal-title" class="text-lg font-bold text-slate-900 dark:text-white">Confirmar Exclusão</h3>
+            <p id="modal-body" class="mt-2 text-sm text-slate-600 dark:text-slate-400">Tem a certeza de que deseja apagar este item? Esta ação não pode ser desfeita.</p>
+            <div class="mt-6 flex justify-end space-x-4">
+                <button id="modal-cancel-btn" class="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-md hover:bg-slate-200 dark:hover:bg-slate-600">Cancelar</button>
+                <button id="modal-confirm-btn" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700">Apagar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Principal -->
+    <div id="app-container" class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <!-- Tela de Login/Registro -->
+        <div id="auth-view">
+            <div class="flex flex-col items-center justify-center min-h-screen">
+                <div class="w-full max-w-md p-8 space-y-6 bg-white dark:bg-slate-800 rounded-xl shadow-md border border-slate-200 dark:border-slate-700">
+                    <div class="text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto text-blue-600"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        <h1 class="text-3xl font-bold mt-4 text-slate-900 dark:text-white">Controle Financeiro</h1>
+                    </div>
+
+                    <!-- Formulário de Login -->
+                    <div id="login-container">
+                        <h2 class="text-xl font-semibold text-center mb-4 text-slate-700 dark:text-slate-300">Acesse a sua conta</h2>
+                        <form id="login-form" class="space-y-4">
+                            <div>
+                                <label for="login-email" class="text-sm font-medium text-slate-600 dark:text-slate-400">Email</label>
+                                <input type="email" id="login-email" required class="w-full px-4 py-2 mt-1 text-slate-800 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="login-password" class="text-sm font-medium text-slate-600 dark:text-slate-400">Senha</label>
+                                <input type="password" id="login-password" required class="w-full px-4 py-2 mt-1 text-slate-800 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <button type="submit" class="w-full py-3 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300">Entrar</button>
+                        </form>
+                        <p class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                            Não tem uma conta?
+                            <a href="#" id="show-register-link" class="font-medium text-blue-600 hover:text-blue-500">Registe-se</a>
+                        </p>
+                    </div>
+
+                    <!-- Formulário de Registro (escondido) -->
+                    <div id="register-container" class="hidden">
+                        <h2 class="text-xl font-semibold text-center mb-4 text-slate-700 dark:text-slate-300">Crie a sua conta</h2>
+                        <form id="register-form" class="space-y-4">
+                            <div>
+                                <label for="register-email" class="text-sm font-medium text-slate-600 dark:text-slate-400">Email</label>
+                                <input type="email" id="register-email" required class="w-full px-4 py-2 mt-1 text-slate-800 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label for="register-password" class="text-sm font-medium text-slate-600 dark:text-slate-400">Senha</label>
+                                <input type="password" id="register-password" required class="w-full px-4 py-2 mt-1 text-slate-800 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <button type="submit" class="w-full py-3 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">Registar</button>
+                        </form>
+                        <p class="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                            Já tem uma conta?
+                            <a href="#" id="show-login-link" class="font-medium text-blue-600 hover:text-blue-500">Faça login</a>
+                        </p>
+                    </div>
+                    <p id="auth-error" class="text-center text-red-500 text-sm h-4 mt-2"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Principal (escondido por padrão) -->
+        <div id="dashboard-view" class="hidden">
+            <!-- Cabeçalho -->
+            <header class="flex flex-wrap items-center justify-between mb-8 pb-4 border-b border-slate-200 dark:border-slate-700">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+                    <p id="user-info" class="text-slate-500 dark:text-slate-400">Bem-vindo(a), <span id="user-email" class="font-medium"></span></p>
+                </div>
+                <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                    <button id="theme-toggle" class="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                        <svg id="theme-icon-light" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <svg id="theme-icon-dark" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    </button>
+                    <label for="ofx-file-input" class="cursor-pointer flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 hover:scale-105 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" x2="12" y1="3" y2="15"></line></svg>
+                        Importar OFX
+                    </label>
+                    <input type="file" id="ofx-file-input" accept=".ofx" class="hidden">
+                    <button id="logout-button" class="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 hover:scale-105 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
+                        Sair
+                    </button>
+                </div>
+            </header>
+            
+            <div id="status-message" class="text-center mb-4 h-6"></div>
+
+            <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Coluna de Resumo -->
+                <aside class="lg:col-span-1 space-y-6">
+                    <!-- Card de Adicionar Transação Manual -->
+                    <div class="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900 dark:text-white">Adicionar Transação</h3>
+                        <form id="manual-transaction-form" class="space-y-3">
+                            <input type="text" id="manual-desc" placeholder="Descrição (ex: Café da manhã)" required class="w-full px-4 py-2 text-slate-800 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="number" id="manual-amount" placeholder="Valor (ex: -15.50 para despesa)" step="0.01" required class="w-full px-4 py-2 text-slate-800 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="date" id="manual-date" required class="w-full px-4 py-2 text-slate-800 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <select id="manual-category" required class="w-full px-4 py-2 text-slate-800 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Selecione uma categoria...</option>
+                            </select>
+                            <button type="submit" class="w-full py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-all duration-200 hover:scale-105">Adicionar Transação</button>
+                        </form>
+                    </div>
+
+                    <!-- Cards de Resumo -->
+                    <div class="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center space-x-4">
+                        <div class="p-3 bg-blue-100 dark:bg-blue-500/20 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-500"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-500 dark:text-slate-400">Saldo Atual</h3>
+                            <p id="balance" class="text-2xl font-bold text-blue-600">R$ 0,00</p>
+                        </div>
+                    </div>
+                    <div class="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center space-x-4">
+                        <div class="p-3 bg-green-100 dark:bg-green-500/20 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-500"><line x1="12" x2="12" y1="5" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-500 dark:text-slate-400">Receitas</h3>
+                            <p id="income" class="text-2xl font-bold text-green-500">R$ 0,00</p>
+                        </div>
+                    </div>
+                    <div class="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex items-center space-x-4">
+                        <div class="p-3 bg-red-100 dark:bg-red-500/20 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><line x1="12" x2="12" y1="5" y2="19"></line><polyline points="19 12 12 5 5 12"></polyline></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-slate-500 dark:text-slate-400">Despesas</h3>
+                            <p id="expenses" class="text-2xl font-bold text-red-500">R$ 0,00</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Card de Relatório de Despesas -->
+                    <div class="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900 dark:text-white">Relatório de Despesas</h3>
+                        <div class="chart-container relative h-64">
+                            <canvas id="expense-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Card de Gerenciar Categorias -->
+                    <div class="p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900 dark:text-white">Gerir Categorias</h3>
+                        <form id="category-form" class="space-y-3">
+                            <input type="text" id="category-name" placeholder="Nome da nova categoria" required class="w-full px-4 py-2 text-slate-800 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <select id="category-type" class="w-full px-4 py-2 text-slate-800 bg-slate-100 dark:bg-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="expense">Despesa</option>
+                                <option value="income">Receita</option>
+                            </select>
+                            <button type="submit" class="w-full py-2 font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-all duration-200 hover:scale-105">Adicionar Categoria</button>
+                        </form>
+                        <div class="mt-4">
+                            <h4 class="font-semibold mb-2 text-slate-700 dark:text-slate-300">As suas Categorias:</h4>
+                            <ul id="category-list" class="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+                                <!-- Lista de categorias será inserida aqui -->
+                            </ul>
+                        </div>
+                    </div>
+                </aside>
+                
+                <!-- Coluna de Transações -->
+                <section class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Últimas Transações</h2>
+                    </div>
+                    <div id="transactions-container" class="overflow-x-auto min-h-[300px]">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-100 dark:bg-slate-800/50">
+                                <tr>
+                                    <th class="p-4 font-semibold text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400">Data</th>
+                                    <th class="p-4 font-semibold text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400">Descrição</th>
+                                    <th class="p-4 font-semibold text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400">Categoria</th>
+                                    <th class="p-4 font-semibold text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400 text-right">Valor (R$)</th>
+                                    <th class="p-4 font-semibold text-sm uppercase tracking-wider text-slate-500 dark:text-slate-400 text-center">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactions-tbody" class="divide-y divide-slate-200 dark:divide-slate-700">
+                                <!-- Linhas de transação serão inseridas aqui -->
+                            </tbody>
+                        </table>
+                        <div id="loading-spinner" class="hidden justify-center items-center p-8">
+                            <div class="spinner w-8 h-8 border-4 border-slate-200 dark:border-slate-600 rounded-full"></div>
+                            <span class="ml-4 text-slate-500 dark:text-slate-400">A carregar transações...</span>
+                        </div>
+                        <div id="no-transactions" class="text-center p-8 text-slate-500 dark:text-slate-400 hidden">
+                            Nenhuma transação encontrada. Importe um ficheiro OFX ou adicione uma manualmente.
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script type="module">
+        const { createClient } = supabase;
+
+        // --- CONFIGURAÇÃO E INICIALIZAÇÃO DO SUPABASE ---
+        const SUPABASE_URL = 'https://sxkxsgftbtzzinswywer.supabase.co'; 
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4a3hzZ2Z0YnR6emluc3d5d2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MTc0MDYsImV4cCI6MjA2OTk5MzQwNn0.-O5fd9Vc2ylnQRxX2H0J1oYl3EzNgegGlLtfpaBeYOw';
+
+        // --- REFERÊNCIAS DO DOM ---
+        const authView = document.getElementById('auth-view');
+        const dashboardView = document.getElementById('dashboard-view');
+        const loginContainer = document.getElementById('login-container');
+        const registerContainer = document.getElementById('register-container');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterLink = document.getElementById('show-register-link');
+        const showLoginLink = document.getElementById('show-login-link');
+        const authError = document.getElementById('auth-error');
+        const userEmail = document.getElementById('user-email');
+        const logoutButton = document.getElementById('logout-button');
+        const ofxFileInput = document.getElementById('ofx-file-input');
+        const transactionsTbody = document.getElementById('transactions-tbody');
+        const noTransactions = document.getElementById('no-transactions');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const balanceEl = document.getElementById('balance');
+        const incomeEl = document.getElementById('income');
+        const expensesEl = document.getElementById('expenses');
+        const statusMessage = document.getElementById('status-message');
+        const categoryForm = document.getElementById('category-form');
+        const categoryList = document.getElementById('category-list');
+        const expenseChartCanvas = document.getElementById('expense-chart');
+        const manualTransactionForm = document.getElementById('manual-transaction-form');
+        const manualCategorySelect = document.getElementById('manual-category');
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalBody = document.getElementById('modal-body');
+        const modalConfirmBtn = document.getElementById('modal-confirm-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIconLight = document.getElementById('theme-icon-light');
+        const themeIconDark = document.getElementById('theme-icon-dark');
+
+        // VERIFICAÇÃO DE CONFIGURAÇÃO
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            authView.innerHTML = `<div class="p-8 text-center text-red-500">Erro: Chaves do Supabase não configuradas.</div>`;
+            throw new Error("Supabase não configurado.");
+        }
+
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+        let userCategories = [];
+        let expenseChartInstance = null;
+        
+        // --- LÓGICA DO TEMA (MODO ESCURO) ---
+        const applyTheme = (theme) => {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                themeIconLight.classList.add('hidden');
+                themeIconDark.classList.remove('hidden');
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIconLight.classList.remove('hidden');
+                themeIconDark.classList.add('hidden');
+            }
+            // Atualiza o gráfico se ele já existir
+            if (expenseChartInstance) {
+                expenseChartInstance.options.plugins.legend.labels.color = theme === 'dark' ? '#cbd5e1' : '#475569';
+                expenseChartInstance.data.datasets[0].borderColor = theme === 'dark' ? '#1e293b' : '#ffffff';
+                expenseChartInstance.update();
+            }
+        };
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            const newTheme = isDark ? 'dark' : 'light';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        });
+
+        // Aplica o tema guardado ao carregar a página
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(savedTheme);
+
+
+        // --- LÓGICA DO MODAL DE CONFIRMAÇÃO ---
+        let resolveConfirmation;
+        const showConfirmationModal = (title, body) => {
+            modalTitle.textContent = title;
+            modalBody.textContent = body;
+            confirmationModal.classList.remove('hidden');
+            setTimeout(() => confirmationModal.classList.remove('opacity-0'), 10);
+            return new Promise(resolve => {
+                resolveConfirmation = resolve;
+            });
+        };
+        modalConfirmBtn.onclick = () => {
+            if (resolveConfirmation) resolveConfirmation(true);
+            hideConfirmationModal();
+        };
+        modalCancelBtn.onclick = () => {
+            if (resolveConfirmation) resolveConfirmation(false);
+            hideConfirmationModal();
+        };
+        const hideConfirmationModal = () => {
+            confirmationModal.classList.add('opacity-0');
+            setTimeout(() => confirmationModal.classList.add('hidden'), 300);
+        };
+
+        // --- AUTENTICAÇÃO E UI ---
+
+        showRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginContainer.classList.add('hidden');
+            registerContainer.classList.remove('hidden');
+            authError.textContent = '';
+        });
+
+        showLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerContainer.classList.add('hidden');
+            loginContainer.classList.remove('hidden');
+            authError.textContent = '';
+        });
+        
+        // Observador do estado de autenticação
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            if (session && session.user) {
+                currentUser = session.user;
+                authView.classList.add('hidden');
+                dashboardView.classList.remove('hidden');
+                userEmail.textContent = currentUser.email;
+                document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+                await loadInitialData();
+            } else {
+                currentUser = null;
+                dashboardView.classList.add('hidden');
+                authView.classList.remove('hidden');
+                clearDashboard();
+            }
+        });
+
+        // Formulário de Registro
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = registerForm['register-email'].value;
+            const password = registerForm['register-password'].value;
+            authError.textContent = '';
+
+            const { data, error } = await supabaseClient.auth.signUp({ email, password });
+
+            if (error) {
+                authError.textContent = 'Erro no registo: ' + error.message;
+            } else {
+                authError.textContent = 'Registo realizado! Verifique o seu e-mail para confirmação.';
+                registerForm.reset();
+            }
+        });
+
+        // Formulário de Login
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = loginForm['login-email'].value;
+            const password = loginForm['login-password'].value;
+            authError.textContent = '';
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+            if (error) {
+                authError.textContent = 'E-mail ou senha inválidos.';
+            }
+        });
+
+        // Logout
+        logoutButton.addEventListener('click', async () => {
+            await supabaseClient.auth.signOut();
+        });
+
+        // --- LÓGICA DO OFX ---
+
+        ofxFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file || !currentUser) return;
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const fileContent = event.target.result;
+                try {
+                    showStatus('A importar transações...', 'info');
+                    const transactionsToSave = parseOFX(fileContent);
+                    if (transactionsToSave.length === 0) {
+                       showStatus('Nenhuma transação nova encontrada no ficheiro.', 'warn');
+                       return;
+                    }
+                    
+                    const { error } = await supabaseClient.from('transactions').insert(transactionsToSave);
+
+                    if (error) {
+                        if (error.code === '23505') {
+                             showStatus('Ficheiro já importado ou contém transações duplicadas.', 'warn');
+                        } else { throw error; }
+                    } else {
+                        showStatus(`${transactionsToSave.length} transações importadas com sucesso!`, 'success');
+                    }
+                    await loadTransactions();
+
+                } catch (error) {
+                    console.error("Erro ao processar OFX:", error);
+                    showStatus('Erro ao ler o ficheiro OFX. Verifique o formato.', 'error');
+                } finally {
+                    e.target.value = ''; 
+                }
+            };
+            reader.readAsText(file, 'UTF-8');
+        });
+        
+        function parseOFX(ofxContent) {
+            const transactions = [];
+            const transactionBlocks = ofxContent.split('<STMTTRN>');
+            transactionBlocks.shift();
+
+            for (const block of transactionBlocks) {
+                const dateMatch = block.match(/<DTPOSTED>([^<]+)/);
+                const amountMatch = block.match(/<TRNAMT>([^<]+)/);
+                const memoMatch = block.match(/<MEMO>([^<]+)/);
+                const fitidMatch = block.match(/<FITID>([^<]+)/);
+
+                if (dateMatch && amountMatch && memoMatch && fitidMatch) {
+                    const rawDate = dateMatch[1].substring(0, 8);
+                    const formattedDate = `${rawDate.substring(0, 4)}-${rawDate.substring(4, 6)}-${rawDate.substring(6, 8)}`;
+
+                    transactions.push({
+                        user_id: currentUser.id,
+                        fitid: fitidMatch[1],
+                        date: formattedDate,
+                        amount: parseFloat(amountMatch[1]),
+                        memo: memoMatch[1].trim(),
+                    });
+                }
+            }
+            return transactions;
+        }
+
+        // --- LÓGICA DO BANCO DE DADOS (SUPABASE) ---
+        
+        async function loadInitialData() {
+            await loadCategories();
+            await loadTransactions();
+        }
+
+        async function loadCategories() {
+            if (!currentUser) return;
+            const { data, error } = await supabaseClient
+                .from('categories')
+                .select('*')
+                .order('name');
+            
+            if (error) {
+                console.error('Erro ao carregar categorias:', error);
+                return;
+            }
+            userCategories = data;
+            renderCategoryList();
+            populateCategoryDropdowns();
+        }
+
+        async function loadTransactions() {
+            if (!currentUser) return;
+            
+            setLoading(true);
+
+            const { data: transactions, error } = await supabaseClient
+                .from('transactions')
+                .select('*')
+                .order('date', { ascending: false });
+            
+            setLoading(false);
+
+            if (error) {
+                console.error('Erro ao carregar transações:', error);
+                showStatus('Não foi possível carregar os dados.', 'error');
+                return;
+            }
+            
+            renderTransactions(transactions);
+            updateDashboardSummary(transactions);
+            renderExpenseChart(transactions);
+        }
+
+        categoryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = categoryForm['category-name'].value.trim();
+            const type = categoryForm['category-type'].value;
+
+            if (!name) return;
+
+            const { error } = await supabaseClient
+                .from('categories')
+                .insert({ name, type, user_id: currentUser.id });
+            
+            if (error) {
+                showStatus('Erro ao criar categoria. Ela já pode existir.', 'error');
+            } else {
+                showStatus('Categoria criada com sucesso!', 'success');
+                categoryForm.reset();
+                await loadCategories();
+            }
+        });
+        
+        manualTransactionForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const description = manualTransactionForm['manual-desc'].value.trim();
+            const amount = parseFloat(manualTransactionForm['manual-amount'].value);
+            const date = manualTransactionForm['manual-date'].value;
+            const categoryId = manualTransactionForm['manual-category'].value;
+
+            if (!description || isNaN(amount) || !date || !categoryId) {
+                showStatus('Por favor, preencha todos os campos.', 'warn');
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from('transactions')
+                .insert({
+                    memo: description,
+                    amount: amount,
+                    date: date,
+                    category_id: categoryId,
+                    user_id: currentUser.id
+                });
+
+            if (error) {
+                showStatus('Erro ao adicionar transação.', 'error');
+                console.error('Erro ao inserir transação manual:', error);
+            } else {
+                showStatus('Transação adicionada com sucesso!', 'success');
+                manualTransactionForm.reset();
+                document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+                await loadTransactions();
+            }
+        });
+
+        async function handleCategorySave(transactionId, categoryId) {
+            if (!categoryId) return;
+            const { error } = await supabaseClient
+                .from('transactions')
+                .update({ category_id: categoryId })
+                .eq('id', transactionId);
+            
+            if (error) {
+                showStatus('Erro ao atualizar categoria.', 'error');
+            } else {
+                showStatus('Transação categorizada!', 'success');
+                await loadTransactions();
+            }
+        }
+
+        async function deleteCategory(categoryId) {
+            const confirmed = await showConfirmationModal('Apagar Categoria', 'Tem a certeza? As transações associadas a esta categoria ficarão sem categoria.');
+            if (!confirmed) return;
+
+            const { error } = await supabaseClient.from('categories').delete().eq('id', categoryId);
+            if (error) {
+                showStatus('Erro ao apagar categoria.', 'error');
+            } else {
+                showStatus('Categoria apagada.', 'success');
+                await loadInitialData();
+            }
+        }
+
+        async function deleteTransaction(transactionId) {
+            const confirmed = await showConfirmationModal('Apagar Transação', 'Tem a certeza de que deseja apagar esta transação?');
+            if (!confirmed) return;
+
+            const { error } = await supabaseClient.from('transactions').delete().eq('id', transactionId);
+            if (error) {
+                showStatus('Erro ao apagar transação.', 'error');
+            } else {
+                showStatus('Transação apagada.', 'success');
+                await loadTransactions();
+            }
+        }
+        
+        // --- RENDERIZAÇÃO E UI ---
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                loadingSpinner.style.display = 'flex';
+                transactionsTbody.classList.add('hidden');
+                noTransactions.classList.add('hidden');
+            } else {
+                loadingSpinner.style.display = 'none';
+                transactionsTbody.classList.remove('hidden');
+            }
+        }
+
+        function renderCategoryList() {
+            categoryList.innerHTML = '';
+            if (userCategories.length === 0) {
+                categoryList.innerHTML = '<li>Nenhuma categoria criada.</li>';
+                return;
+            }
+            userCategories.forEach(cat => {
+                const li = document.createElement('li');
+                li.className = 'flex justify-between items-center group';
+                const color = cat.type === 'income' ? 'text-green-500' : 'text-red-500';
+                li.innerHTML = `
+                    <span><span class="font-semibold ${color}">•</span> ${cat.name}</span>
+                    <button class="delete-category-btn p-1 rounded-full text-slate-400 hover:bg-red-100 dark:hover:bg-red-900/50 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                `;
+                li.querySelector('.delete-category-btn').onclick = () => deleteCategory(cat.id);
+                categoryList.appendChild(li);
+            });
+        }
+
+        function populateCategoryDropdowns() {
+            manualCategorySelect.innerHTML = '<option value="">Selecione uma categoria...</option>';
+            
+            const incomeCategories = userCategories.filter(c => c.type === 'income');
+            const expenseCategories = userCategories.filter(c => c.type === 'expense');
+
+            if (incomeCategories.length > 0) {
+                const incomeOptgroup = document.createElement('optgroup');
+                incomeOptgroup.label = 'Receitas';
+                incomeCategories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.id;
+                    option.textContent = cat.name;
+                    incomeOptgroup.appendChild(option);
+                });
+                manualCategorySelect.appendChild(incomeOptgroup);
+            }
+
+            if (expenseCategories.length > 0) {
+                const expenseOptgroup = document.createElement('optgroup');
+                expenseOptgroup.label = 'Despesas';
+                expenseCategories.forEach(cat => {
+                    const option = document.createElement('option');
+                    option.value = cat.id;
+                    option.textContent = cat.name;
+                    expenseOptgroup.appendChild(option);
+                });
+                manualCategorySelect.appendChild(expenseOptgroup);
+            }
+        }
+
+        function renderTransactions(transactions) {
+            transactionsTbody.innerHTML = '';
+            if (!transactions || transactions.length === 0) {
+                noTransactions.classList.remove('hidden');
+            } else {
+                noTransactions.classList.add('hidden');
+                transactions.forEach(tx => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-200';
+                    const amountColor = tx.amount >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
+                    
+                    const categoryCell = document.createElement('td');
+                    categoryCell.className = 'p-4';
+
+                    if (tx.category_id) {
+                        const category = userCategories.find(c => c.id === tx.category_id);
+                        categoryCell.textContent = category ? category.name : 'N/A';
+                    } else {
+                        const transactionType = tx.amount >= 0 ? 'income' : 'expense';
+                        const relevantCategories = userCategories.filter(c => c.type === transactionType);
+                        
+                        if (relevantCategories.length > 0) {
+                            const select = document.createElement('select');
+                            select.className = 'w-full p-1 text-sm bg-slate-100 dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500';
+                            select.innerHTML = `<option value="">Selecione...</option>` + 
+                                relevantCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                            
+                            select.addEventListener('change', () => {
+                                handleCategorySave(tx.id, select.value);
+                            });
+                            categoryCell.appendChild(select);
+                        } else {
+                            categoryCell.innerHTML = `<span class="text-xs text-slate-400">Crie uma categoria</span>`;
+                        }
+                    }
+
+                    const actionsCell = document.createElement('td');
+                    actionsCell.className = 'p-4 text-center';
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'p-1 rounded-full text-slate-400 hover:bg-red-100 dark:hover:bg-red-900/50 hover:text-red-600 transition-colors';
+                    deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+                    deleteBtn.onclick = () => deleteTransaction(tx.id);
+                    actionsCell.appendChild(deleteBtn);
+
+                    row.innerHTML = `
+                        <td class="p-4 whitespace-nowrap">${new Date(tx.date + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+                        <td class="p-4">${tx.memo}</td>
+                    `;
+                    row.appendChild(categoryCell);
+                    row.innerHTML += `<td class="p-4 text-right font-medium ${amountColor}">${formatCurrency(tx.amount)}</td>`;
+                    row.appendChild(actionsCell);
+                    transactionsTbody.appendChild(row);
+                });
+            }
+        }
+
+        function renderExpenseChart(transactions) {
+            const ctx = expenseChartCanvas.getContext('2d');
+            
+            if (expenseChartInstance) {
+                expenseChartInstance.destroy();
+            }
+
+            const expensesByCategory = transactions
+                .filter(tx => tx.amount < 0 && tx.category_id)
+                .reduce((acc, tx) => {
+                    const category = userCategories.find(c => c.id === tx.category_id);
+                    if (category) {
+                        acc[category.name] = (acc[category.name] || 0) + Math.abs(tx.amount);
+                    }
+                    return acc;
+                }, {});
+
+            const labels = Object.keys(expensesByCategory);
+            const data = Object.values(expensesByCategory);
+
+            if (labels.length === 0) {
+                // Opcional: Mostrar uma mensagem se não houver dados
+                return;
+            }
+
+            expenseChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Despesas por Categoria',
+                        data: data,
+                        backgroundColor: [
+                            '#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#8b5cf6'
+                        ],
+                        borderColor: document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff', // bg-slate-800 ou bg-white
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#475569' // text-slate-300 ou text-slate-600
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDashboardSummary(transactions) {
+            let totalBalance = 0, totalIncome = 0, totalExpenses = 0;
+
+            if (transactions) {
+                transactions.forEach(tx => {
+                    const amount = parseFloat(tx.amount);
+                    totalBalance += amount;
+                    if (amount > 0) totalIncome += amount;
+                    else totalExpenses += amount;
+                });
+            }
+
+            balanceEl.textContent = formatCurrency(totalBalance);
+            balanceEl.className = `text-2xl font-bold ${totalBalance >= 0 ? 'text-blue-600' : 'text-red-500'}`;
+            incomeEl.textContent = formatCurrency(totalIncome);
+            expensesEl.textContent = formatCurrency(Math.abs(totalExpenses));
+        }
+        
+        function clearDashboard() {
+            transactionsTbody.innerHTML = '';
+            noTransactions.classList.remove('hidden');
+            balanceEl.textContent = formatCurrency(0);
+            incomeEl.textContent = formatCurrency(0);
+            expensesEl.textContent = formatCurrency(0);
+            userEmail.textContent = '';
+            categoryList.innerHTML = '';
+            if (expenseChartInstance) {
+                expenseChartInstance.destroy();
+            }
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        }
+        
+        function showStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            const colors = {
+                info: 'text-blue-500',
+                success: 'text-green-500',
+                warn: 'text-yellow-500',
+                error: 'text-red-500'
+            };
+            statusMessage.className = `text-center mb-4 h-6 font-semibold ${colors[type]}`;
+            setTimeout(() => statusMessage.textContent = '', 5000);
+        }
+
+    </script>
+</body>
+</html>
