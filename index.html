@@ -416,7 +416,14 @@
 
         // Logout
         logoutButton.addEventListener('click', async () => {
-            await supabaseClient.auth.signOut();
+            showStatus('A terminar a sessão...', 'info');
+            const { error } = await supabaseClient.auth.signOut();
+            if (error) {
+                console.error('Erro ao terminar a sessão:', error);
+                showStatus('Erro ao terminar a sessão.', 'error');
+            } else {
+                window.location.reload();
+            }
         });
 
         // --- LÓGICA DO OFX ---
