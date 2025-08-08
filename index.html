@@ -160,7 +160,7 @@
                 
                 <ul id="main-nav" class="space-y-2 flex-grow">
                     <li><a href="#dashboard" data-page="dashboard-page" class="nav-link flex items-center px-4 py-2.5 text-zinc-600 dark:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium transition-colors">Dashboard</a></li>
-                    <li><a href="#accounts" data-page="accounts-page" class="nav-link flex items-center px-4 py-2.5 text-zinc-600 dark:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium transition-colors">Contas</a></li>
+                    <li><a href="#bank_accounts" data-page="bank_accounts-page" class="nav-link flex items-center px-4 py-2.5 text-zinc-600 dark:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium transition-colors">Contas</a></li>
                 </ul>
                 
                  <div class="mt-auto">
@@ -208,7 +208,7 @@
         const ofxModal = document.getElementById('ofx-modal');
         const ofxForm = document.getElementById('ofx-form');
         const ofxModalCancelBtn = document.getElementById('ofx-modal-cancel-btn');
-        const ofxAccountSelect = document.getElementById('ofx-account-select');
+        const ofxbank_accountselect = document.getElementById('ofx-account-select');
         const ofxFileInput = document.getElementById('ofx-file-input');
 
         // VERIFICAÇÃO DE CONFIGURAÇÃO
@@ -221,7 +221,7 @@
 
         let currentUser = null;
         let allTransactions = [];
-        let userAccounts = [];
+        let userbank_accounts = [];
         let userCategories = [];
         let parsedOfxTransactions = [];
         let incomeChart, expenseChart;
@@ -332,8 +332,8 @@
             });
             
             switch(hash) {
-                case '#accounts':
-                    renderAccountsPage();
+                case '#bank_accounts':
+                    renderbank_accountsPage();
                     break;
                 case '#dashboard':
                 default:
@@ -345,9 +345,9 @@
         // --- LÓGICA DE DADOS ---
         async function loadInitialData() {
             if (!currentUser) return;
-            const { data: accounts, error: accountsError } = await supabaseClient.from('accounts').select('*');
-            if (accountsError) console.error("Error fetching accounts:", accountsError);
-            userAccounts = accounts || [];
+            const { data: bank_accounts, error: bank_accountsError } = await supabaseClient.from('bank_accounts').select('*');
+            if (bank_accountsError) console.error("Error fetching bank_accounts:", bank_accountsError);
+            userbank_accounts = bank_accounts || [];
             
             const { data: categories, error: categoriesError } = await supabaseClient.from('categories').select('*');
             if (categoriesError) console.error("Error fetching categories:", categoriesError);
@@ -392,7 +392,7 @@
             updateDashboard();
         }
 
-        function renderAccountsPage() {
+        function renderbank_accountsPage() {
             mainContent.innerHTML = `
                 <h2 class="text-3xl font-bold text-zinc-900 dark:text-white mb-6">Contas Bancárias</h2>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -408,19 +408,19 @@
                             <button type="submit" class="w-full py-2.5 font-semibold text-white bg-sky-500 rounded-md hover:bg-sky-600 transition-all">Adicionar Conta</button>
                         </form>
                     </div>
-                    <div id="bank-accounts-list" class="lg:col-span-2 space-y-4">
+                    <div id="bank-bank_accounts-list" class="lg:col-span-2 space-y-4">
                         <!-- Lista de contas será renderizada aqui -->
                     </div>
                 </div>
             `;
-            setupAccountsPage();
+            setupbank_accountsPage();
         }
 
         // --- LÓGICA DAS PÁGINAS (SETUP E UPDATES) ---
-        function setupAccountsPage() {
+        function setupbank_accountsPage() {
             const form = document.getElementById('add-account-form');
             const bankSelect = document.getElementById('bank-name');
-            const listContainer = document.getElementById('bank-accounts-list');
+            const listContainer = document.getElementById('bank-bank_accounts-list');
             
             const brazilianBanks = [{ code: '001', name: 'Banco do Brasil S.A.' }, { code: '237', name: 'Bradesco S.A.' }, { code: '341', name: 'Itaú Unibanco S.A.' }, { code: '104', name: 'Caixa Econômica Federal' }, { code: '033', name: 'Santander (Brasil) S.A.' }, { code: '260', name: 'Nu Pagamentos S.A. (Nubank)' }, { code: '077', name: 'Banco Inter S.A.' }];
             bankSelect.innerHTML = '<option value="">Selecione o Banco</option>' + brazilianBanks.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
@@ -437,7 +437,7 @@
                     user_id: currentUser.id,
                 };
 
-                const { error } = await supabaseClient.from('accounts').insert(newAccount);
+                const { error } = await supabaseClient.from('bank_accounts').insert(newAccount);
                 if (error) {
                     console.error("Error adding account:", error);
                     showToast(`Erro: ${error.message} (código: ${error.code})`, true);
@@ -454,11 +454,11 @@
         
         function renderAccountList(container) {
             if (!container) return;
-            if (userAccounts.length === 0) {
+            if (userbank_accounts.length === 0) {
                 container.innerHTML = `<p class="text-center text-zinc-500 dark:text-zinc-400 col-span-2">Nenhuma conta encontrada. Adicione uma para começar.</p>`;
                 return;
             }
-            container.innerHTML = userAccounts.map(account => `
+            container.innerHTML = userbank_accounts.map(account => `
                 <div class="bg-white dark:bg-zinc-700 p-4 rounded-lg shadow-sm flex justify-between items-center">
                     <div>
                         <p class="font-bold text-zinc-800 dark:text-white">${account.name}</p>
@@ -536,8 +536,8 @@
 
         // --- LÓGICA DE IMPORTAÇÃO OFX ---
         function openOfxModal() {
-            if (userAccounts.length === 0) { showToast('Adicione uma conta bancária antes de importar.', true); return; }
-            ofxAccountSelect.innerHTML = userAccounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join('');
+            if (userbank_accounts.length === 0) { showToast('Adicione uma conta bancária antes de importar.', true); return; }
+            ofxbank_accountselect.innerHTML = userbank_accounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join('');
             showModal(ofxModal);
         }
 
@@ -565,7 +565,7 @@
 
         ofxForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const accountId = ofxAccountSelect.value;
+            const accountId = ofxbank_accountselect.value;
             if (!accountId || parsedOfxTransactions.length === 0) { showToast('Selecione conta e arquivo válidos.', true); return; }
 
             const transactionsToInsert = parsedOfxTransactions.map(tx => ({ ...tx, account_id: accountId, user_id: currentUser.id }));
