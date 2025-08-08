@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Financeiro - Dashboard</title>
+    <title>Controle Financeiro</title>
     
     <!-- Tailwind CSS (Versão Completa - CDN Play) -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,15 +21,28 @@
 
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .modal { transition: opacity 0.3s ease; }
+        .modal, #toast-notification { transition: opacity 0.3s ease, transform 0.3s ease; }
         .chart-container {
             position: relative;
             height: 40vh;
             width: 100%;
         }
+        .nav-link.active {
+            background-color: #0ea5e9; /* sky-500 */
+            color: white;
+            font-weight: 600;
+        }
+        .nav-link.active svg {
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 antialiased">
+
+    <!-- Toast/Notification -->
+    <div id="toast-notification" class="fixed top-5 right-5 z-[100] bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg opacity-0 transform translate-y-[-20px]">
+        <p id="toast-message"></p>
+    </div>
 
     <!-- Modal de Termos de Uso -->
     <div id="terms-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden opacity-0">
@@ -41,7 +54,7 @@
                 </button>
             </div>
             <div class="prose dark:prose-invert overflow-y-auto pr-4 text-zinc-600 dark:text-zinc-300">
-                <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">1. Aceitação dos Termos</h3>
+                 <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">1. Aceitação dos Termos</h3>
                 <p>Ao se cadastrar e utilizar a plataforma Controle Financeiro, o usuário declara que leu, entendeu e concorda com os presentes Termos de Uso, bem como com a nossa Política de Privacidade.</p>
                 <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">2. Objeto do Serviço</h3>
                 <p>O Controle Financeiro oferece ao usuário ferramentas para controle e gestão financeira, permitindo o registro de receitas, despesas, metas e outras informações relacionadas. O serviço é oferecido “como está”, podendo ser atualizado ou alterado a qualquer momento.</p>
@@ -66,21 +79,44 @@
         </div>
     </div>
 
+    <!-- Modal de Importação OFX -->
+    <div id="ofx-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden opacity-0">
+        <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 transform transition-all scale-95">
+            <h3 class="text-lg font-bold text-zinc-900 dark:text-white">Importar Extrato OFX</h3>
+            <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Selecione o(s) arquivo(s) e a conta de destino para as transações.</p>
+            <form id="ofx-form" class="mt-4 space-y-4">
+                <div>
+                    <label for="ofx-file-input" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Arquivo(s) OFX</label>
+                    <input type="file" id="ofx-file-input" accept=".ofx" required multiple class="w-full mt-1 text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"/>
+                </div>
+                <div>
+                    <label for="ofx-account-select" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Associar à Conta</label>
+                    <select id="ofx-account-select" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+                        <option value="">Carregando contas...</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-4 pt-4">
+                    <button type="button" id="ofx-modal-cancel-btn" class="px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-sky-500 rounded-md hover:bg-sky-600 transition-colors">Importar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
     <!-- Container Principal -->
     <div id="app-container">
 
         <!-- Tela de Login/Registro -->
         <div id="auth-view">
-            <div class="flex flex-col items-center justify-center min-h-screen p-4">
+             <div class="flex flex-col items-center justify-center min-h-screen p-4">
                 <div class="w-full max-w-md p-8 space-y-6 bg-white dark:bg-zinc-800 rounded-2xl shadow-lg">
                     <div class="text-center">
-                         <svg class="mx-auto h-10 w-auto text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <svg class="mx-auto h-10 w-auto text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 3a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m15-3V6a2.25 2.25 0 00-2.25-2.25H8.25A2.25 2.25 0 006 6v3m12 6v3a2.25 2.25 0 01-2.25 2.25H8.25a2.25 2.25 0 01-2.25-2.25v-3" />
                         </svg>
                         <h1 class="text-3xl font-bold mt-4 text-zinc-900 dark:text-white">Controle Financeiro</h1>
                     </div>
-
-                    <!-- Formulário de Login -->
                     <div id="login-container">
                         <h2 class="text-xl font-semibold text-center mb-4 text-zinc-700 dark:text-zinc-300">Acesse a sua conta</h2>
                         <form id="login-form" class="space-y-4">
@@ -94,42 +130,19 @@
                             </div>
                             <button type="submit" class="w-full py-3 font-semibold text-white bg-sky-500 rounded-md hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-all duration-300">Entrar</button>
                         </form>
-                        <p class="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                            Não tem uma conta?
-                            <a href="#" id="show-register-link" class="font-medium text-sky-500 hover:text-sky-400">Registe-se</a>
-                        </p>
+                        <p class="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">Não tem uma conta? <a href="#" id="show-register-link" class="font-medium text-sky-500 hover:text-sky-400">Registe-se</a></p>
                     </div>
-
-                    <!-- Formulário de Registro (escondido) -->
                     <div id="register-container" class="hidden">
                         <h2 class="text-xl font-semibold text-center mb-4 text-zinc-700 dark:text-zinc-300">Crie a sua conta</h2>
                         <form id="register-form" class="space-y-4">
-                             <div>
-                                <label for="register-name" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Nome Completo</label>
-                                <input type="text" id="register-name" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            </div>
-                            <div>
-                                <label for="register-email" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Email</label>
-                                <input type="email" id="register-email" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            </div>
-                            <div>
-                                <label for="register-password" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Senha</label>
-                                <input type="password" id="register-password" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            </div>
-                            <div>
-                                <label for="register-password-confirm" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Confirme a Senha</label>
-                                <input type="password" id="register-password-confirm" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            </div>
-                             <div class="flex items-center">
-                                <input id="register-terms" type="checkbox" required class="h-4 w-4 rounded border-zinc-300 text-sky-600 focus:ring-sky-500">
-                                <label for="register-terms" class="ml-2 block text-sm text-zinc-600 dark:text-zinc-400">Eu aceito os <a href="#" id="open-terms-link" class="font-medium text-sky-500 hover:text-sky-400">Termos de Uso</a></label>
-                            </div>
+                             <div><label for="register-name" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Nome Completo</label><input type="text" id="register-name" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+                            <div><label for="register-email" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Email</label><input type="email" id="register-email" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+                            <div><label for="register-password" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Senha</label><input type="password" id="register-password" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+                             <div><label for="register-password-confirm" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Confirme a Senha</label><input type="password" id="register-password-confirm" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
+                             <div class="flex items-center"><input id="register-terms" type="checkbox" required class="h-4 w-4 rounded border-zinc-300 text-sky-600 focus:ring-sky-500"><label for="register-terms" class="ml-2 block text-sm text-zinc-600 dark:text-zinc-400">Eu aceito os <a href="#" id="open-terms-link" class="font-medium text-sky-500 hover:text-sky-400">Termos de Uso</a></label></div>
                             <button type="submit" class="w-full py-3 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">Registar</button>
                         </form>
-                        <p class="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                            Já tem uma conta?
-                            <a href="#" id="show-login-link" class="font-medium text-sky-500 hover:text-sky-400">Faça login</a>
-                        </p>
+                        <p class="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">Já tem uma conta? <a href="#" id="show-login-link" class="font-medium text-sky-500 hover:text-sky-400">Faça login</a></p>
                     </div>
                     <p id="auth-error" class="text-center text-red-500 text-sm h-4 mt-2"></p>
                 </div>
@@ -137,60 +150,31 @@
         </div>
 
         <!-- Layout Principal da Aplicação (escondido por padrão) -->
-        <div id="main-layout" class="hidden">
-            <div class="p-4 md:p-8">
-                <header class="flex flex-wrap items-center justify-between mb-8 pb-4 border-b border-zinc-200 dark:border-zinc-700">
-                    <div>
-                        <h1 class="text-3xl font-bold text-zinc-900 dark:text-white">Dashboard</h1>
-                        <p id="user-info" class="text-zinc-500 dark:text-zinc-400">Bem-vindo(a), <span id="user-name" class="font-medium"></span></p>
-                    </div>
-                    <div class="flex items-center space-x-4 mt-4 md:mt-0">
-                         <button id="logout-button-main" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Sair</button>
-                    </div>
-                </header>
-
-                <!-- Filtros de Período -->
-                <div class="mb-6">
-                    <div id="period-filter" class="flex items-center space-x-2 bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg max-w-xs">
-                        <button data-period="day" class="filter-btn w-full px-4 py-1.5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 rounded-md transition-colors">Dia</button>
-                        <button data-period="month" class="filter-btn w-full px-4 py-1.5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 rounded-md transition-colors active bg-white dark:bg-zinc-700 text-sky-500 shadow-sm">Mês</button>
-                        <button data-period="year" class="filter-btn w-full px-4 py-1.5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 rounded-md transition-colors">Ano</button>
-                    </div>
+        <div id="main-layout" class="hidden md:grid md:grid-cols-[280px_1fr]">
+            <!-- Navegação Lateral -->
+            <nav class="bg-white dark:bg-zinc-800 p-6 border-r border-zinc-200 dark:border-zinc-700 min-h-screen flex flex-col">
+                <div class="flex items-center space-x-3 mb-10">
+                    <svg class="h-8 w-auto text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 3a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m15-3V6a2.25 2.25 0 00-2.25-2.25H8.25A2.25 2.25 0 006 6v3m12 6v3a2.25 2.25 0 01-2.25 2.25H8.25a2.25 2.25 0 01-2.25-2.25v-3" /></svg>
+                    <h1 class="text-2xl font-bold text-zinc-900 dark:text-white">Financeiro</h1>
                 </div>
-
-                <!-- Cards de Resumo -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-semibold text-zinc-500 dark:text-zinc-400">Receitas</h3>
-                        <p id="income-total" class="text-3xl font-bold text-green-500">R$ 0,00</p>
-                    </div>
-                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-semibold text-zinc-500 dark:text-zinc-400">Despesas</h3>
-                        <p id="expense-total" class="text-3xl font-bold text-red-500">R$ 0,00</p>
-                    </div>
-                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
-                        <h3 class="text-lg font-semibold text-zinc-500 dark:text-zinc-400">Saldo do Período</h3>
-                        <p id="balance-total" class="text-3xl font-bold text-sky-500">R$ 0,00</p>
-                    </div>
+                
+                <ul id="main-nav" class="space-y-2 flex-grow">
+                    <li><a href="#dashboard" data-page="dashboard-page" class="nav-link flex items-center px-4 py-2.5 text-zinc-600 dark:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium transition-colors">Dashboard</a></li>
+                    <li><a href="#accounts" data-page="accounts-page" class="nav-link flex items-center px-4 py-2.5 text-zinc-600 dark:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium transition-colors">Contas</a></li>
+                </ul>
+                
+                 <div class="mt-auto">
+                    <button id="logout-button-main" class="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
+                        Sair
+                    </button>
                 </div>
-
-                <!-- Gráficos -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
-                        <h3 class="text-xl font-bold mb-4">Receitas por Categoria</h3>
-                        <div class="chart-container">
-                            <canvas id="income-chart"></canvas>
-                        </div>
-                    </div>
-                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
-                        <h3 class="text-xl font-bold mb-4">Despesas por Categoria</h3>
-                        <div class="chart-container">
-                            <canvas id="expense-chart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+            </nav>
+            
+            <!-- Conteúdo Principal -->
+            <main id="main-content" class="w-full p-8 overflow-y-auto h-screen">
+                <!-- As páginas serão injetadas aqui -->
+            </main>
         </div>
     </div>
 
@@ -204,6 +188,7 @@
         // --- REFERÊNCIAS DO DOM ---
         const authView = document.getElementById('auth-view');
         const mainLayout = document.getElementById('main-layout');
+        const mainContent = document.getElementById('main-content');
         const loginContainer = document.getElementById('login-container');
         const registerContainer = document.getElementById('register-container');
         const loginForm = document.getElementById('login-form');
@@ -212,20 +197,23 @@
         const showLoginLink = document.getElementById('show-login-link');
         const authError = document.getElementById('auth-error');
         const logoutButtonMain = document.getElementById('logout-button-main');
+        const mainNav = document.getElementById('main-nav');
+        
+        // Modal de Termos
         const termsModal = document.getElementById('terms-modal');
         const openTermsLink = document.getElementById('open-terms-link');
         const closeTermsModal = document.getElementById('close-terms-modal');
-        const userNameEl = document.getElementById('user-name');
-        const periodFilter = document.getElementById('period-filter');
-        const incomeTotalEl = document.getElementById('income-total');
-        const expenseTotalEl = document.getElementById('expense-total');
-        const balanceTotalEl = document.getElementById('balance-total');
-        const incomeChartCanvas = document.getElementById('income-chart');
-        const expenseChartCanvas = document.getElementById('expense-chart');
+
+        // Modal OFX
+        const ofxModal = document.getElementById('ofx-modal');
+        const ofxForm = document.getElementById('ofx-form');
+        const ofxModalCancelBtn = document.getElementById('ofx-modal-cancel-btn');
+        const ofxAccountSelect = document.getElementById('ofx-account-select');
+        const ofxFileInput = document.getElementById('ofx-file-input');
 
         // VERIFICAÇÃO DE CONFIGURAÇÃO
-        if (SUPABASE_ANON_KEY === 'SUA_CHAVE_AQUI') {
-            authView.innerHTML = `<div class="p-8 text-center text-red-500">Erro: A chave de API do Supabase não foi configurada no ficheiro index.html.</div>`;
+        if (SUPABASE_URL.includes('YOUR_SUPABASE_URL') || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY')) {
+            authView.innerHTML = `<div class="p-8 text-center text-red-500 bg-red-100 rounded-lg"><strong>Erro de Configuração:</strong> As chaves de API do Supabase não foram configuradas corretamente no script.</div>`;
             throw new Error("Supabase não configurado.");
         }
 
@@ -233,53 +221,56 @@
 
         let currentUser = null;
         let allTransactions = [];
+        let userAccounts = [];
         let userCategories = [];
-        let incomeChart = null;
-        let expenseChart = null;
-        let currentPeriod = 'month';
+        let parsedOfxTransactions = [];
+        let incomeChart, expenseChart;
 
-        // --- LÓGICA DO MODAL DE TERMOS ---
-        if (openTermsLink) {
-            openTermsLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                termsModal.classList.remove('hidden');
-                setTimeout(() => termsModal.classList.remove('opacity-0'), 10);
-            });
-        }
-        if (closeTermsModal) {
-            closeTermsModal.addEventListener('click', () => {
-                termsModal.classList.add('opacity-0');
-                setTimeout(() => termsModal.classList.add('hidden'), 300);
-            });
-        }
+        // --- LÓGICA DE UI (MODAIS, NOTIFICAÇÕES) ---
+        const showToast = (message, isError = true) => {
+            const toast = document.getElementById('toast-notification');
+            const toastMessage = document.getElementById('toast-message');
 
+            toast.className = `fixed top-5 right-5 z-[100] text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 opacity-0 transform translate-y-[-20px] ${isError ? 'bg-red-600' : 'bg-green-600'}`;
+            toastMessage.textContent = message;
+
+            toast.classList.remove('hidden', 'opacity-0', 'translate-y-[-20px]');
+            setTimeout(() => {
+                toast.classList.remove('opacity-0');
+                toast.classList.add('opacity-100', 'translate-y-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 4000);
+        };
+
+        const showModal = (modal) => {
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        };
+        const hideModal = (modal) => {
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+        
+        openTermsLink.addEventListener('click', (e) => { e.preventDefault(); showModal(termsModal); });
+        closeTermsModal.addEventListener('click', () => hideModal(termsModal));
+        ofxModalCancelBtn.addEventListener('click', () => hideModal(ofxModal));
 
         // --- AUTENTICAÇÃO E UI ---
-        if (showRegisterLink) {
-            showRegisterLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                loginContainer.classList.add('hidden');
-                registerContainer.classList.remove('hidden');
-                authError.textContent = '';
-            });
-        }
-
-        if (showLoginLink) {
-            showLoginLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                registerContainer.classList.add('hidden');
-                loginContainer.classList.remove('hidden');
-                authError.textContent = '';
-            });
-        }
+        showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); loginContainer.classList.add('hidden'); registerContainer.classList.remove('hidden'); authError.textContent = ''; });
+        showLoginLink.addEventListener('click', (e) => { e.preventDefault(); registerContainer.classList.add('hidden'); loginContainer.classList.remove('hidden'); authError.textContent = ''; });
         
-        // Observador do estado de autenticação
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
             if (session && session.user) {
                 currentUser = session.user;
                 authView.classList.add('hidden');
-                mainLayout.classList.remove('hidden');
+                mainLayout.classList.remove('hidden', 'md:hidden');
                 await loadInitialData();
+                handleNavigation();
             } else {
                 currentUser = null;
                 mainLayout.classList.add('hidden');
@@ -287,100 +278,182 @@
             }
         });
 
-        // Formulário de Registro
-        if (registerForm) {
-            registerForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const fullName = registerForm['register-name'].value;
-                const email = registerForm['register-email'].value;
-                const password = registerForm['register-password'].value;
-                const passwordConfirm = registerForm['register-password-confirm'].value;
-                const termsAccepted = registerForm['register-terms'].checked;
-                authError.textContent = '';
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullName = registerForm['register-name'].value;
+            const email = registerForm['register-email'].value;
+            const password = registerForm['register-password'].value;
+            const passwordConfirm = registerForm['register-password-confirm'].value;
+            const termsAccepted = registerForm['register-terms'].checked;
+            authError.textContent = '';
 
-                if (password !== passwordConfirm) {
-                    authError.textContent = 'As senhas não coincidem.';
-                    return;
-                }
-                if (password.length < 8) {
-                    authError.textContent = 'A senha deve ter pelo menos 8 caracteres.';
-                    return;
-                }
-                if (!termsAccepted) {
-                    authError.textContent = 'Você precisa de aceitar os Termos de Uso.';
-                    return;
-                }
+            if (password !== passwordConfirm) { authError.textContent = 'As senhas não coincidem.'; return; }
+            if (password.length < 8) { authError.textContent = 'A senha deve ter pelo menos 8 caracteres.'; return; }
+            if (!termsAccepted) { authError.textContent = 'Você precisa de aceitar os Termos de Uso.'; return; }
 
-                const { data, error } = await supabaseClient.auth.signUp({ 
-                    email, 
-                    password
-                });
+            const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
+            if (error) { authError.textContent = 'Erro no registo: ' + error.message; }
+            else if (data.user) { authError.textContent = 'Registo realizado! Verifique o seu e-mail para confirmação.'; registerForm.reset(); }
+        });
 
-                if (error) {
-                    authError.textContent = 'Erro no registo: ' + error.message;
-                } else if (data.user) {
-                    // Atualiza o perfil com o nome completo
-                    const { error: profileError } = await supabaseClient
-                        .from('profiles')
-                        .update({ full_name: fullName })
-                        .eq('id', data.user.id);
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = loginForm['login-email'].value;
+            const password = loginForm['login-password'].value;
+            authError.textContent = '';
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) { authError.textContent = 'E-mail ou senha inválidos.'; }
+        });
 
-                    if (profileError) {
-                        authError.textContent = 'Erro ao guardar o nome do utilizador.';
-                    } else {
-                        authError.textContent = 'Registo realizado! Verifique o seu e-mail para confirmação.';
-                        registerForm.reset();
-                    }
-                }
+        logoutButtonMain.addEventListener('click', async () => { await supabaseClient.auth.signOut(); });
+
+        // --- NAVEGAÇÃO (SPA) ---
+        window.addEventListener('hashchange', handleNavigation);
+        
+        function handleNavigation() {
+            const hash = window.location.hash || '#dashboard';
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.toggle('active', link.hash === hash);
             });
+            
+            switch(hash) {
+                case '#accounts':
+                    renderAccountsPage();
+                    break;
+                case '#dashboard':
+                default:
+                    renderDashboardPage();
+                    break;
+            }
         }
-
-        // Formulário de Login
-        if (loginForm) {
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const email = loginForm['login-email'].value;
-                const password = loginForm['login-password'].value;
-                authError.textContent = '';
-
-                const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
-                if (error) {
-                    authError.textContent = 'E-mail ou senha inválidos.';
-                }
-            });
-        }
-
-        // Logout
-        if (logoutButtonMain) {
-            logoutButtonMain.addEventListener('click', async () => {
-                await supabaseClient.auth.signOut();
-            });
-        }
-
-        // --- LÓGICA DO DASHBOARD ---
-
+        
+        // --- LÓGICA DE DADOS ---
         async function loadInitialData() {
             if (!currentUser) return;
-            
-            const { data: profile } = await supabaseClient.from('profiles').select('full_name').eq('id', currentUser.id).single();
-            if (userNameEl) {
-                userNameEl.textContent = profile?.full_name || currentUser.email;
-            }
-
+            const { data: accounts } = await supabaseClient.from('accounts').select('*');
+            userAccounts = accounts || [];
             const { data: categories } = await supabaseClient.from('categories').select('*');
             userCategories = categories || [];
-
             const { data: transactions } = await supabaseClient.from('transactions').select('*');
             allTransactions = transactions || [];
+        }
 
+        // --- RENDERIZAÇÃO DAS PÁGINAS ---
+        function renderDashboardPage() {
+            mainContent.innerHTML = `
+                <header class="flex flex-wrap items-center justify-between mb-8">
+                    <div>
+                        <h1 class="text-3xl font-bold text-zinc-900 dark:text-white">Dashboard</h1>
+                        <p id="user-info" class="text-zinc-500 dark:text-zinc-400">Bem-vindo(a), <span class="font-medium">${currentUser.user_metadata?.full_name || currentUser.email}</span></p>
+                    </div>
+                    <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                         <button id="import-ofx-btn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Importar OFX</button>
+                    </div>
+                </header>
+                <div class="mb-6">
+                    <div id="period-filter" class="flex items-center space-x-2 bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg max-w-xs">
+                        <button data-period="day" class="filter-btn w-full px-4 py-1.5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 rounded-md transition-colors">Dia</button>
+                        <button data-period="month" class="filter-btn w-full px-4 py-1.5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 rounded-md transition-colors active">Mês</button>
+                        <button data-period="year" class="filter-btn w-full px-4 py-1.5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 rounded-md transition-colors">Ano</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><h3 class="text-lg font-semibold text-zinc-500 dark:text-zinc-400">Receitas</h3><p id="income-total" class="text-3xl font-bold text-green-500">R$ 0,00</p></div>
+                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><h3 class="text-lg font-semibold text-zinc-500 dark:text-zinc-400">Despesas</h3><p id="expense-total" class="text-3xl font-bold text-red-500">R$ 0,00</p></div>
+                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><h3 class="text-lg font-semibold text-zinc-500 dark:text-zinc-400">Saldo do Período</h3><p id="balance-total" class="text-3xl font-bold text-sky-500">R$ 0,00</p></div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><h3 class="text-xl font-bold mb-4">Receitas por Categoria</h3><div class="chart-container"><canvas id="income-chart"></canvas></div></div>
+                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><h3 class="text-xl font-bold mb-4">Despesas por Categoria</h3><div class="chart-container"><canvas id="expense-chart"></canvas></div></div>
+                </div>
+            `;
+            document.getElementById('import-ofx-btn').addEventListener('click', openOfxModal);
+            document.getElementById('period-filter').addEventListener('click', handlePeriodFilter);
             updateDashboard();
+        }
+
+        function renderAccountsPage() {
+            mainContent.innerHTML = `
+                <h2 class="text-3xl font-bold text-zinc-900 dark:text-white mb-6">Contas Bancárias</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-1 p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
+                        <h3 class="text-xl font-bold mb-4">Adicionar Nova Conta</h3>
+                        <form id="add-account-form" class="space-y-4">
+                            <input type="text" id="account-name" placeholder="Apelido da Conta (ex: Itaú Principal)" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <select id="bank-name" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
+                            <input type="text" id="agency" placeholder="Agência" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <input type="text" id="account-number" placeholder="Número da Conta" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <input type="text" id="owner-document" placeholder="CPF ou CNPJ do Titular" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <input type="number" id="initial-balance" placeholder="Saldo Inicial" step="0.01" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <button type="submit" class="w-full py-2.5 font-semibold text-white bg-sky-500 rounded-md hover:bg-sky-600 transition-all">Adicionar Conta</button>
+                        </form>
+                    </div>
+                    <div id="bank-accounts-list" class="lg:col-span-2 space-y-4">
+                        <!-- Lista de contas será renderizada aqui -->
+                    </div>
+                </div>
+            `;
+            setupAccountsPage();
+        }
+
+        // --- LÓGICA DAS PÁGINAS (SETUP E UPDATES) ---
+        function setupAccountsPage() {
+            const form = document.getElementById('add-account-form');
+            const bankSelect = document.getElementById('bank-name');
+            const listContainer = document.getElementById('bank-accounts-list');
+            
+            const brazilianBanks = [{ code: '001', name: 'Banco do Brasil S.A.' }, { code: '237', name: 'Bradesco S.A.' }, { code: '341', name: 'Itaú Unibanco S.A.' }, { code: '104', name: 'Caixa Econômica Federal' }, { code: '033', name: 'Santander (Brasil) S.A.' }, { code: '260', name: 'Nu Pagamentos S.A. (Nubank)' }, { code: '077', name: 'Banco Inter S.A.' }];
+            bankSelect.innerHTML = '<option value="">Selecione o Banco</option>' + brazilianBanks.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newAccount = {
+                    name: form['account-name'].value,
+                    bank_name: form['bank-name'].value,
+                    agency: form['agency'].value,
+                    account_number: form['account-number'].value,
+                    owner_document: form['owner-document'].value,
+                    balance: parseFloat(form['initial-balance'].value),
+                    user_id: currentUser.id,
+                };
+
+                const { error } = await supabaseClient.from('accounts').insert(newAccount);
+                if (error) {
+                    showToast('Erro ao adicionar conta: ' + error.message, true);
+                } else {
+                    showToast('Conta adicionada com sucesso!', false);
+                    form.reset();
+                    await loadInitialData();
+                    renderAccountList(listContainer);
+                }
+            });
+
+            renderAccountList(listContainer);
+        }
+        
+        function renderAccountList(container) {
+            if (!container) return;
+            if (userAccounts.length === 0) {
+                container.innerHTML = `<p class="text-center text-zinc-500 dark:text-zinc-400 col-span-2">Nenhuma conta encontrada. Adicione uma para começar.</p>`;
+                return;
+            }
+            container.innerHTML = userAccounts.map(account => `
+                <div class="bg-white dark:bg-zinc-700 p-4 rounded-lg shadow-sm flex justify-between items-center">
+                    <div>
+                        <p class="font-bold text-zinc-800 dark:text-white">${account.name}</p>
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400">${account.bank_name}</p>
+                        <p class="text-sm text-zinc-500 dark:text-zinc-400">Ag: ${account.agency} / CC: ${account.account_number}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-lg ${account.balance >= 0 ? 'text-green-500' : 'text-red-500'}">${formatCurrency(account.balance)}</p>
+                    </div>
+                </div>
+            `).join('');
         }
 
         function filterTransactionsByPeriod(period) {
             const now = new Date();
             let startDate;
-
             if (period === 'day') {
                 startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             } else if (period === 'month') {
@@ -388,94 +461,125 @@
             } else if (period === 'year') {
                 startDate = new Date(now.getFullYear(), 0, 1);
             }
-            
             return allTransactions.filter(tx => new Date(tx.date) >= startDate);
         }
 
         function updateDashboard() {
-            const filteredTransactions = filterTransactionsByPeriod(currentPeriod);
-            
-            let income = 0;
-            let expense = 0;
-            const incomeByCategory = {};
-            const expenseByCategory = {};
+            const period = document.querySelector('#period-filter .active')?.dataset.period || 'month';
+            const filteredTransactions = filterTransactionsByPeriod(period);
+            let income = 0, expense = 0;
+            const incomeByCategory = {}, expenseByCategory = {};
 
             filteredTransactions.forEach(tx => {
                 const category = userCategories.find(c => c.id === tx.category_id)?.name || 'Sem Categoria';
-                if (tx.amount > 0) {
-                    income += tx.amount;
-                    incomeByCategory[category] = (incomeByCategory[category] || 0) + tx.amount;
-                } else {
-                    expense += Math.abs(tx.amount);
-                    expenseByCategory[category] = (expenseByCategory[category] || 0) + Math.abs(tx.amount);
-                }
+                if (tx.amount > 0) { income += tx.amount; incomeByCategory[category] = (incomeByCategory[category] || 0) + tx.amount; } 
+                else { expense += Math.abs(tx.amount); expenseByCategory[category] = (expenseByCategory[category] || 0) + Math.abs(tx.amount); }
             });
+            
+            document.getElementById('income-total').textContent = formatCurrency(income);
+            document.getElementById('expense-total').textContent = formatCurrency(expense);
+            document.getElementById('balance-total').textContent = formatCurrency(income - expense);
 
-            if (incomeTotalEl) incomeTotalEl.textContent = formatCurrency(income);
-            if (expenseTotalEl) expenseTotalEl.textContent = formatCurrency(expense);
-            if (balanceTotalEl) balanceTotalEl.textContent = formatCurrency(income - expense);
-
-            renderPieChart(incomeChart, incomeChartCanvas, 'Receitas', incomeByCategory);
-            renderPieChart(expenseChart, expenseChartCanvas, 'Despesas', expenseByCategory);
+            renderPieChart('income', document.getElementById('income-chart'), 'Receitas', incomeByCategory);
+            renderPieChart('expense', document.getElementById('expense-chart'), 'Despesas', expenseByCategory);
         }
         
-        function renderPieChart(chartInstance, canvas, label, data) {
+        function renderPieChart(type, canvas, label, data) {
             if (!canvas) return;
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
+            let chartInstance = type === 'income' ? incomeChart : expenseChart;
+            if (chartInstance) { chartInstance.destroy(); }
             
             const labels = Object.keys(data);
             const values = Object.values(data);
-            
-            const chartColors = label === 'Receitas' 
-                ? ['#16a34a', '#4ade80', '#86efac', '#dcfce7']
-                : ['#dc2626', '#f87171', '#fca5a5', '#fee2e2'];
+            const chartColors = type === 'income' ? ['#16a34a', '#22c55e', '#4ade80'] : ['#dc2626', '#ef4444', '#f87171'];
 
             chartInstance = new Chart(canvas.getContext('2d'), {
                 type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: label,
-                        data: values,
-                        backgroundColor: chartColors,
-                        borderColor: document.documentElement.classList.contains('dark') ? '#18181b' : '#ffffff',
-                        borderWidth: 2,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                color: document.documentElement.classList.contains('dark') ? '#a1a1aa' : '#52525b'
-                            }
-                        }
-                    }
-                }
+                data: { labels, datasets: [{ label, data: values, backgroundColor: chartColors, borderColor: document.documentElement.classList.contains('dark') ? '#1f2937' : '#fff', borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#d1d5db' : '#374151' } } } }
             });
-            if (label === 'Receitas') incomeChart = chartInstance;
-            else expenseChart = chartInstance;
+            if (type === 'income') incomeChart = chartInstance; else expenseChart = chartInstance;
         }
 
-        if (periodFilter) {
-            periodFilter.addEventListener('click', (e) => {
-                if (e.target.tagName === 'BUTTON') {
-                    currentPeriod = e.target.dataset.period;
-                    document.querySelectorAll('.filter-btn').forEach(btn => {
-                        btn.classList.remove('active', 'bg-white', 'dark:bg-zinc-700', 'text-sky-500', 'shadow-sm');
-                    });
-                    e.target.classList.add('active', 'bg-white', 'dark:bg-zinc-700', 'text-sky-500', 'shadow-sm');
-                    updateDashboard();
-                }
-            });
+        function handlePeriodFilter(e) {
+            if (e.target.tagName === 'BUTTON') {
+                document.querySelectorAll('#period-filter .filter-btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                updateDashboard();
+            }
         }
 
         function formatCurrency(value) {
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+        }
+
+        // --- LÓGICA DE IMPORTAÇÃO OFX ---
+        function openOfxModal() {
+            if (userAccounts.length === 0) { showToast('Adicione uma conta bancária antes de importar.', true); return; }
+            ofxAccountSelect.innerHTML = userAccounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join('');
+            showModal(ofxModal);
+        }
+
+        ofxFileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            parsedOfxTransactions = [];
+            const filePromises = Array.from(files).map(file => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (event) => { try { resolve(parseOfx(event.target.result)); } catch (error) { reject(error); } };
+                    reader.onerror = () => reject(new Error(`Erro ao ler o ficheiro: ${file.name}`));
+                    reader.readAsText(file);
+                });
+            });
+
+            Promise.all(filePromises)
+                .then(results => {
+                    parsedOfxTransactions = results.flat();
+                    if (parsedOfxTransactions.length > 0) { showToast(`${parsedOfxTransactions.length} transações carregadas.`, false); } 
+                    else { showToast('Nenhuma transação válida encontrada.', true); }
+                })
+                .catch(error => showToast(`Erro ao processar: ${error.message}`, true));
+        });
+
+        ofxForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const accountId = ofxAccountSelect.value;
+            if (!accountId || parsedOfxTransactions.length === 0) { showToast('Selecione conta e arquivo válidos.', true); return; }
+
+            const transactionsToInsert = parsedOfxTransactions.map(tx => ({ ...tx, account_id: accountId, user_id: currentUser.id }));
+            const { error } = await supabaseClient.from('transactions').insert(transactionsToInsert);
+
+            if (error) { showToast('Erro ao importar: ' + error.message, true); } 
+            else {
+                showToast(`${transactionsToInsert.length} transações importadas!`, false);
+                hideModal(ofxModal);
+                ofxForm.reset();
+                parsedOfxTransactions = [];
+                await loadInitialData();
+                updateDashboard();
+            }
+        });
+
+        function parseOfx(ofxContent) {
+            const transactions = [];
+            const transactionBlocks = ofxContent.split('<STMTTRN>');
+            if (transactionBlocks.length <= 1) throw new Error("Formato OFX inválido.");
+            for (let i = 1; i < transactionBlocks.length; i++) {
+                const block = transactionBlocks[i];
+                const dateMatch = block.match(/<DTPOSTED>([0-9]+)/);
+                const amountMatch = block.match(/<TRNAMT>([-.0-9]+)/);
+                const memoMatch = block.match(/<MEMO>([^<]+)/);
+                if (dateMatch && amountMatch && memoMatch) {
+                    const ds = dateMatch[1];
+                    transactions.push({
+                        date: `${ds.substring(0, 4)}-${ds.substring(4, 6)}-${ds.substring(6, 8)}`,
+                        amount: parseFloat(amountMatch[1]),
+                        description: memoMatch[1].trim().replace(/&amp;/g, '&'),
+                    });
+                }
+            }
+            return transactions;
         }
 
     </script>
