@@ -268,7 +268,7 @@
             if (session && session.user) {
                 currentUser = session.user;
                 authView.classList.add('hidden');
-                mainLayout.classList.remove('hidden', 'md:hidden');
+                mainLayout.classList.remove('hidden');
                 await loadInitialData();
                 handleNavigation();
             } else {
@@ -292,7 +292,10 @@
             if (!termsAccepted) { authError.textContent = 'Você precisa de aceitar os Termos de Uso.'; return; }
 
             const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
-            if (error) { authError.textContent = 'Erro no registo: ' + error.message; }
+            if (error) {
+                console.error('Sign Up Error:', error);
+                authError.textContent = 'Erro no registo: ' + error.message; 
+            }
             else if (data.user) { authError.textContent = 'Registo realizado! Verifique o seu e-mail para confirmação.'; registerForm.reset(); }
         });
 
@@ -302,10 +305,22 @@
             const password = loginForm['login-password'].value;
             authError.textContent = '';
             const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) { authError.textContent = 'E-mail ou senha inválidos.'; }
+            if (error) {
+                console.error('Sign In Error:', error);
+                authError.textContent = 'E-mail ou senha inválidos.'; 
+            }
         });
 
-        logoutButtonMain.addEventListener('click', async () => { await supabaseClient.auth.signOut(); });
+        logoutButtonMain.addEventListener('click', async () => { 
+            const { error } = await supabaseClient.auth.signOut();
+            if (error) {
+                console.error('Error signing out:', error);
+                showToast('Erro ao sair: ' + error.message, true);
+            } else {
+                // Força a recarga da página para garantir um estado limpo e a exibição da tela de login.
+                window.location.reload();
+            }
+        });
 
         // --- NAVEGAÇÃO (SPA) ---
         window.addEventListener('hashchange', handleNavigation);
@@ -330,11 +345,16 @@
         // --- LÓGICA DE DADOS ---
         async function loadInitialData() {
             if (!currentUser) return;
-            const { data: accounts } = await supabaseClient.from('accounts').select('*');
+            const { data: accounts, error: accountsError } = await supabaseClient.from('accounts').select('*');
+            if (accountsError) console.error("Error fetching accounts:", accountsError);
             userAccounts = accounts || [];
-            const { data: categories } = await supabaseClient.from('categories').select('*');
+            
+            const { data: categories, error: categoriesError } = await supabaseClient.from('categories').select('*');
+            if (categoriesError) console.error("Error fetching categories:", categoriesError);
             userCategories = categories || [];
-            const { data: transactions } = await supabaseClient.from('transactions').select('*');
+
+            const { data: transactions, error: transactionsError } = await supabaseClient.from('transactions').select('*');
+            if(transactionsError) console.error("Error fetching transactions:", transactionsError);
             allTransactions = transactions || [];
         }
 
@@ -419,7 +439,8 @@
 
                 const { error } = await supabaseClient.from('accounts').insert(newAccount);
                 if (error) {
-                    showToast('Erro ao adicionar conta: ' + error.message, true);
+                    console.error("Error adding account:", error);
+                    showToast(`Erro: ${error.message} (código: ${error.code})`, true);
                 } else {
                     showToast('Conta adicionada com sucesso!', false);
                     form.reset();
@@ -550,7 +571,10 @@
             const transactionsToInsert = parsedOfxTransactions.map(tx => ({ ...tx, account_id: accountId, user_id: currentUser.id }));
             const { error } = await supabaseClient.from('transactions').insert(transactionsToInsert);
 
-            if (error) { showToast('Erro ao importar: ' + error.message, true); } 
+            if (error) {
+                console.error("Error importing transactions:", error);
+                showToast(`Erro: ${error.message} (código: ${error.code})`, true);
+            } 
             else {
                 showToast(`${transactionsToInsert.length} transações importadas!`, false);
                 hideModal(ofxModal);
