@@ -1,610 +1,1105 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" class="">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle Financeiro</title>
-    
-    <!-- Tailwind CSS (Versão Completa - CDN Play) -->
+    <title>Gerenciador Financeiro - Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Supabase JS Library -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Chart.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
+    <script>
+        tailwind.config = {
+            darkMode: 'class'
+        }
+    </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .modal, #toast-notification { transition: opacity 0.3s ease, transform 0.3s ease; }
-        .chart-container {
-            position: relative;
-            height: 40vh;
-            width: 100%;
+        body {
+            font-family: 'Inter', sans-serif;
         }
-        .nav-link.active {
-            background-color: #0ea5e9; /* sky-500 */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .modal-overlay {
+            transition: opacity 0.3s ease;
+        }
+        .modal-container {
+            transition: transform 0.3s ease;
+        }
+        .sidebar-link.active {
+            background-color: #4f46e5;
             color: white;
-            font-weight: 600;
         }
-        .nav-link.active svg {
-            color: white;
-        }
+        /* Estilos Dark Mode */
+        .dark .bg-gray-100 { background-color: #111827; }
+        .dark .bg-white { background-color: #1f2937; }
+        .dark .text-gray-800 { color: #d1d5db; }
+        .dark .text-gray-900 { color: #f9fafb; }
+        .dark .text-gray-700 { color: #9ca3af; }
+        .dark .text-gray-600 { color: #6b7280; }
+        .dark .text-gray-500 { color: #6b7280; }
+        .dark .border-gray-300 { border-color: #4b5563; }
+        .dark .bg-gray-50 { background-color: #374151; }
+        .dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2); }
+        .dark .hover\:bg-gray-200:hover { background-color: #374151; }
+        .dark .sidebar-link.active { background-color: #4338ca; }
+        .dark .bg-indigo-50 { background-color: #3730a3; }
+        .dark .text-indigo-600 { color: #a5b4fc; }
     </style>
 </head>
-<body class="bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200 antialiased">
+<body class="bg-gray-100 text-gray-800">
 
-    <!-- Toast/Notification -->
-    <div id="toast-notification" class="fixed top-5 right-5 z-[100] bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg opacity-0 transform translate-y-[-20px]">
-        <p id="toast-message"></p>
-    </div>
-
-    <!-- Modal de Termos de Uso -->
-    <div id="terms-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden opacity-0">
-        <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-xl p-6 w-full max-w-2xl mx-4 transform transition-all scale-95 flex flex-col max-h-[90vh]">
-            <div class="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-700 pb-4 mb-4">
-                <h2 class="text-2xl font-bold text-zinc-900 dark:text-white">Termos de Uso – Controle Financeiro</h2>
-                <button id="close-terms-modal" class="p-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-700">
-                    <svg class="w-6 h-6 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                </button>
-            </div>
-            <div class="prose dark:prose-invert overflow-y-auto pr-4 text-zinc-600 dark:text-zinc-300">
-                 <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">1. Aceitação dos Termos</h3>
-                <p>Ao se cadastrar e utilizar a plataforma Controle Financeiro, o usuário declara que leu, entendeu e concorda com os presentes Termos de Uso, bem como com a nossa Política de Privacidade.</p>
-                <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">2. Objeto do Serviço</h3>
-                <p>O Controle Financeiro oferece ao usuário ferramentas para controle e gestão financeira, permitindo o registro de receitas, despesas, metas e outras informações relacionadas. O serviço é oferecido “como está”, podendo ser atualizado ou alterado a qualquer momento.</p>
-                <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">3. Cadastro do Usuário</h3>
-                <p>Para utilizar o sistema, o usuário deve fornecer informações verdadeiras e completas no formulário de cadastro. O usuário é responsável por manter seus dados de acesso (login e senha) seguros e não compartilhá-los com terceiros. É proibido criar contas falsas ou utilizar informações de terceiros sem autorização.</p>
-                <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">4. Uso da Plataforma</h3>
-                <p>É vedado ao usuário: Utilizar o sistema para fins ilícitos ou fraudulentos; Tentar obter acesso não autorizado a áreas restritas do sistema; Distribuir, copiar ou revender o sistema sem autorização. O uso indevido poderá resultar no bloqueio ou exclusão da conta, sem prejuízo das medidas legais cabíveis.</p>
-                <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">5. Dados e Privacidade</h3>
-                <p>Todas as informações inseridas no sistema são de propriedade do usuário, mas o Controle Financeiro poderá processá-las e armazená-las para funcionamento do serviço. Os dados são protegidos conforme nossa Política de Privacidade e pela legislação aplicável, incluindo a Lei Geral de Proteção de Dados (LGPD – Lei nº 13.709/2018). O usuário é responsável pelo conteúdo cadastrado, devendo garantir que não infringe direitos de terceiros.</p>
-                <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">6. Responsabilidade</h3>
-                <p>O Controle Financeiro: Não se responsabiliza por erros ou perdas causadas por informações incorretas inseridas pelo usuário; Não garante disponibilidade contínua do serviço, podendo realizar manutenções ou interrupções programadas; Não se responsabiliza por prejuízos financeiros decorrentes de má gestão ou decisões tomadas com base nos dados inseridos no sistema.</p>
-                <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">7. Segurança</h3>
-                <p>O usuário deve manter seu dispositivo seguro e atualizado; É recomendada a ativação da autenticação em dois fatores (2FA); Qualquer suspeita de acesso não autorizado deve ser comunicada imediatamente à equipe de suporte.</p>
-                <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">8. Cancelamento e Exclusão de Conta</h3>
-                <p>O usuário pode solicitar a exclusão de sua conta a qualquer momento; A exclusão remove os dados de forma irreversível, conforme prazos da nossa Política de Privacidade; Em caso de violação destes termos, a conta poderá ser suspensa ou encerrada sem aviso prévio.</p>
-                <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">9. Alterações dos Termos</h3>
-                <p>O Controle Financeiro poderá modificar estes Termos a qualquer momento. Alterações relevantes serão comunicadas por e-mail ou dentro da plataforma.</p>
-                <h3 class="font-semibold text-zinc-800 dark:text-zinc-100">10. Foro e Legislação Aplicável</h3>
-                <p>Estes Termos serão regidos pela legislação brasileira. Fica eleito o foro da comarca de Macapá/AP como competente para dirimir quaisquer disputas, com renúncia expressa de qualquer outro.</p>
-                <p class="mt-4 text-sm"><strong>Última atualização:</strong> 08 de Agosto de 2025</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Importação OFX -->
-    <div id="ofx-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden opacity-0">
-        <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-xl p-6 w-full max-w-lg mx-4 transform transition-all scale-95">
-            <h3 class="text-lg font-bold text-zinc-900 dark:text-white">Importar Extrato OFX</h3>
-            <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Selecione o(s) arquivo(s) e a conta de destino para as transações.</p>
-            <form id="ofx-form" class="mt-4 space-y-4">
-                <div>
-                    <label for="ofx-file-input" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Arquivo(s) OFX</label>
-                    <input type="file" id="ofx-file-input" accept=".ofx" required multiple class="w-full mt-1 text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100"/>
+    <!-- Tela de Login -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Login</h2>
+            <form id="login-form">
+                <div class="mb-4">
+                    <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
+                    <input type="email" id="login-email" name="email" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
                 </div>
-                <div>
-                    <label for="ofx-account-select" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Associar à Conta</label>
-                    <select id="ofx-account-select" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                        <option value="">Carregando contas...</option>
-                    </select>
+                <div class="mb-6">
+                    <label for="login-password" class="block text-sm font-medium text-gray-700">Senha</label>
+                    <input type="password" id="login-password" name="password" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required>
                 </div>
-                <div class="flex justify-end space-x-4 pt-4">
-                    <button type="button" id="ofx-modal-cancel-btn" class="px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 bg-zinc-100 dark:bg-zinc-700 rounded-md hover:bg-zinc-200 dark:hover:bg-zinc-600 transition-colors">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-sky-500 rounded-md hover:bg-sky-600 transition-colors">Importar</button>
-                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Entrar</button>
             </form>
+            <p class="text-center text-sm text-gray-600 mt-4">
+                Não tem uma conta? <a href="#" id="show-register-link" class="font-medium text-blue-600 hover:text-blue-500">Cadastre-se</a>
+            </p>
         </div>
     </div>
 
-
-    <!-- Container Principal -->
-    <div id="app-container">
-
-        <!-- Tela de Login/Registro -->
-        <div id="auth-view">
-             <div class="flex flex-col items-center justify-center min-h-screen p-4">
-                <div class="w-full max-w-md p-8 space-y-6 bg-white dark:bg-zinc-800 rounded-2xl shadow-lg">
-                    <div class="text-center">
-                        <svg class="mx-auto h-10 w-auto text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 3a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m15-3V6a2.25 2.25 0 00-2.25-2.25H8.25A2.25 2.25 0 006 6v3m12 6v3a2.25 2.25 0 01-2.25 2.25H8.25a2.25 2.25 0 01-2.25-2.25v-3" />
-                        </svg>
-                        <h1 class="text-3xl font-bold mt-4 text-zinc-900 dark:text-white">Controle Financeiro</h1>
-                    </div>
-                    <div id="login-container">
-                        <h2 class="text-xl font-semibold text-center mb-4 text-zinc-700 dark:text-zinc-300">Acesse a sua conta</h2>
-                        <form id="login-form" class="space-y-4">
-                            <div>
-                                <label for="login-email" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Email</label>
-                                <input type="email" id="login-email" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            </div>
-                            <div>
-                                <label for="login-password" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Senha</label>
-                                <input type="password" id="login-password" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            </div>
-                            <button type="submit" class="w-full py-3 font-semibold text-white bg-sky-500 rounded-md hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 transition-all duration-300">Entrar</button>
-                        </form>
-                        <p class="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">Não tem uma conta? <a href="#" id="show-register-link" class="font-medium text-sky-500 hover:text-sky-400">Registe-se</a></p>
-                    </div>
-                    <div id="register-container" class="hidden">
-                        <h2 class="text-xl font-semibold text-center mb-4 text-zinc-700 dark:text-zinc-300">Crie a sua conta</h2>
-                        <form id="register-form" class="space-y-4">
-                             <div><label for="register-name" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Nome Completo</label><input type="text" id="register-name" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
-                            <div><label for="register-email" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Email</label><input type="email" id="register-email" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
-                            <div><label for="register-password" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Senha</label><input type="password" id="register-password" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
-                             <div><label for="register-password-confirm" class="text-sm font-medium text-zinc-600 dark:text-zinc-400">Confirme a Senha</label><input type="password" id="register-password-confirm" required class="w-full px-4 py-2 mt-1 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"></div>
-                             <div class="flex items-center"><input id="register-terms" type="checkbox" required class="h-4 w-4 rounded border-zinc-300 text-sky-600 focus:ring-sky-500"><label for="register-terms" class="ml-2 block text-sm text-zinc-600 dark:text-zinc-400">Eu aceito os <a href="#" id="open-terms-link" class="font-medium text-sky-500 hover:text-sky-400">Termos de Uso</a></label></div>
-                            <button type="submit" class="w-full py-3 font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all duration-300">Registar</button>
-                        </form>
-                        <p class="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">Já tem uma conta? <a href="#" id="show-login-link" class="font-medium text-sky-500 hover:text-sky-400">Faça login</a></p>
-                    </div>
-                    <p id="auth-error" class="text-center text-red-500 text-sm h-4 mt-2"></p>
-                </div>
-            </div>
+    <!-- Tela de Cadastro -->
+    <div id="registration-screen" class="min-h-screen flex items-center justify-center hidden py-12">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-lg">
+            <h2 class="text-2xl font-bold text-center text-gray-900 mb-6">Crie sua Conta</h2>
+            <form id="registration-form" class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div class="md:col-span-2"><label for="reg-name" class="block text-sm font-medium text-gray-700">Nome Completo</label><input type="text" id="reg-name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required></div>
+                <div class="md:col-span-2"><label for="reg-email" class="block text-sm font-medium text-gray-700">Email</label><input type="email" id="reg-email" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required></div>
+                <div><label for="reg-password" class="block text-sm font-medium text-gray-700">Senha</label><input type="password" id="reg-password" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required></div>
+                <div><label for="reg-password-confirm" class="block text-sm font-medium text-gray-700">Confirmar Senha</label><input type="password" id="reg-password-confirm" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" required></div>
+                <div><label for="reg-dob" class="block text-sm font-medium text-gray-700">Data de Nascimento</label><input type="date" id="reg-dob" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></div>
+                <div><label for="reg-income" class="block text-sm font-medium text-gray-700">Renda Mensal (R$)</label><input type="number" id="reg-income" placeholder="3000.00" step="0.01" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></div>
+                <div class="md:col-span-2"><label for="reg-goals" class="block text-sm font-medium text-gray-700">Principais Objetivos Financeiros</label><textarea id="reg-goals" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Ex: Comprar um imóvel, fazer uma viagem, quitar dívidas..."></textarea></div>
+                <div class="md:col-span-2 mt-4"><button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Cadastrar</button></div>
+            </form>
+            <p class="text-center text-sm text-gray-600 mt-4">Já tem uma conta? <a href="#" id="show-login-link" class="font-medium text-blue-600 hover:text-blue-500">Faça o login</a></p>
         </div>
+    </div>
 
-        <!-- Layout Principal da Aplicação (escondido por padrão) -->
-        <div id="main-layout" class="hidden md:grid md:grid-cols-[280px_1fr]">
-            <!-- Navegação Lateral -->
-            <nav class="bg-white dark:bg-zinc-800 p-6 border-r border-zinc-200 dark:border-zinc-700 min-h-screen flex flex-col">
-                <div class="flex items-center space-x-3 mb-10">
-                    <svg class="h-8 w-auto text-sky-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 3a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m15-3V6a2.25 2.25 0 00-2.25-2.25H8.25A2.25 2.25 0 006 6v3m12 6v3a2.25 2.25 0 01-2.25 2.25H8.25a2.25 2.25 0 01-2.25-2.25v-3" /></svg>
-                    <h1 class="text-2xl font-bold text-zinc-900 dark:text-white">Financeiro</h1>
+    <!-- Tela Principal da Aplicação -->
+    <div id="app-screen" class="hidden">
+        <div class="flex h-screen bg-gray-100">
+            <!-- Menu Lateral -->
+            <nav class="w-64 bg-white shadow-lg flex flex-col">
+                <div>
+                    <div class="p-6">
+                        <h1 class="text-2xl font-bold text-indigo-600">Meu App</h1>
+                    </div>
+                    <ul class="mt-6">
+                        <li><a href="#" data-target="dashboard-content" class="sidebar-link active flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg> Dashboard</a></li>
+                        <li><a href="#" data-target="accounts-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg> Contas</a></li>
+                        <li><a href="#" data-target="credit-cards-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg> Cartões de Crédito</a></li>
+                        <li><a href="#" data-target="transactions-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Transações</a></li>
+                        <li><a href="#" data-target="planning-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> Planejamento</a></li>
+                        <li><a href="#" data-target="goals-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg> Metas</a></li>
+                        <li><a href="#" data-target="settings-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Configurações</a></li>
+                    </ul>
                 </div>
-                
-                <ul id="main-nav" class="space-y-2 flex-grow">
-                    <li><a href="#dashboard" data-page="dashboard-page" class="nav-link flex items-center px-4 py-2.5 text-zinc-600 dark:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium transition-colors">Dashboard</a></li>
-                    <li><a href="#bank_accounts" data-page="bank_accounts-page" class="nav-link flex items-center px-4 py-2.5 text-zinc-600 dark:text-zinc-300 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-700 font-medium transition-colors">Contas</a></li>
-                </ul>
-                
-                 <div class="mt-auto">
-                    <button id="logout-button-main" class="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" x2="9" y1="12" y2="12"></line></svg>
+                <div class="mt-auto p-6">
+                    <a href="#" id="logout-button" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-red-100 hover:text-red-600 rounded-lg transition-colors">
+                        <svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                         Sair
-                    </button>
+                    </a>
                 </div>
             </nav>
-            
+
             <!-- Conteúdo Principal -->
-            <main id="main-content" class="w-full p-8 overflow-y-auto h-screen">
-                <!-- As páginas serão injetadas aqui -->
+            <main class="flex-1 flex flex-col overflow-hidden">
+                <div class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-4 md:p-8">
+                    
+                    <!-- Seção Dashboard -->
+                    <div id="dashboard-content" class="app-content">
+                        <div id="summary-dashboard" class="mb-8">
+                            <h2 class="text-2xl font-semibold mb-4">Dashboard</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between"><div><p class="text-sm font-medium text-gray-500">Saldo atual</p><p id="summary-balance" class="text-2xl font-bold text-gray-800">R$ 0,00</p></div><div class="bg-blue-100 text-blue-600 rounded-full p-3"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg></div></div>
+                                <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between"><div><p class="text-sm font-medium text-gray-500">Receitas</p><p id="summary-income" class="text-2xl font-bold text-gray-800">R$ 0,00</p></div><div class="bg-green-100 text-green-600 rounded-full p-3"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6"></path></svg></div></div>
+                                <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between"><div><p class="text-sm font-medium text-gray-500">Despesas</p><p id="summary-expenses" class="text-2xl font-bold text-gray-800">R$ 0,00</p></div><div class="bg-red-100 text-red-600 rounded-full p-3"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></div></div>
+                                <div class="bg-white p-6 rounded-lg shadow-md flex items-center justify-between"><div><p class="text-sm font-medium text-gray-500">Cartão de crédito</p><p id="summary-credit-card" class="text-2xl font-bold text-gray-800">R$ 0,00</p></div><div class="bg-indigo-100 text-indigo-600 rounded-full p-3"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg></div></div>
+                            </div>
+                        </div>
+                        <div id="charts-section" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="font-semibold text-center mb-2">Despesas por Categoria</h3><div class="h-64 flex items-center justify-center"><canvas id="expense-chart"></canvas><p id="no-expense-data" class="text-gray-500 text-center">Nenhuma despesa categorizada.</p></div></div>
+                            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="font-semibold text-center mb-2">Receitas por Categoria</h3><div class="h-64 flex items-center justify-center"><canvas id="income-chart"></canvas><p id="no-income-data" class="text-gray-500 text-center">Nenhuma receita categorizada.</p></div></div>
+                            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="font-semibold text-center mb-2">Balanço do Período</h3><div class="h-64 flex items-center justify-center"><canvas id="balance-chart"></canvas><p id="no-balance-data" class="text-gray-500 text-center">Sem dados para o balanço.</p></div></div>
+                        </div>
+                    </div>
+
+                    <!-- Seção Contas -->
+                    <div id="accounts-content" class="app-content hidden">
+                        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold">Minhas Contas</h2>
+                                <button id="add-account-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">Adicionar Nova Conta</button>
+                            </div>
+                            <div id="accounts-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <p id="no-accounts-message" class="text-gray-500 md:col-span-2 lg:col-span-3 text-center py-4">Nenhuma conta cadastrada ainda.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção Cartões de Crédito -->
+                    <div id="credit-cards-content" class="app-content hidden">
+                        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold">Meus Cartões de Crédito</h2>
+                                <button id="add-credit-card-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">Novo Cartão de Crédito</button>
+                            </div>
+                            <div id="credit-cards-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <p id="no-credit-cards-message" class="text-gray-500 md:col-span-2 lg:col-span-3 text-center py-4">Nenhum cartão de crédito cadastrado.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção Transações -->
+                    <div id="transactions-content" class="app-content hidden">
+                        <div id="upload-section" class="bg-white rounded-lg shadow-md p-6 mb-8">
+                            <h2 class="text-xl font-semibold mb-4">Importar Extrato OFX</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                                <div><label for="account-select-for-upload" class="block text-sm font-medium text-gray-700 mb-1">Selecione a conta para importar o extrato:</label><select id="account-select-for-upload" class="block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></select></div>
+                                <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center"><input type="file" id="ofx-file-input" accept=".ofx,.xml" class="hidden"><button id="upload-button" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400" disabled>Selecionar Arquivo OFX</button><p id="file-name" class="mt-2 text-gray-500 text-sm">Nenhum arquivo selecionado.</p></div>
+                            </div>
+                        </div>
+                        <div id="transactions-section" class="bg-white rounded-lg shadow-md p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold">Suas Transações</h2>
+                                <div class="flex items-center gap-4">
+                                    <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                                    <span id="month-display" class="text-lg font-semibold text-indigo-600"></span>
+                                    <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+                                </div>
+                                <div class="flex items-center"><label for="hide-categorized-toggle" class="text-sm font-medium text-gray-700 mr-2">Ocultar categorizadas</label><input type="checkbox" id="hide-categorized-toggle" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"></div>
+                            </div>
+                            <div id="loading-spinner" class="hidden flex justify-center items-center py-8"><div class="loader"></div></div>
+                            <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4" role="alert"><strong class="font-bold">Erro!</strong><span class="block sm:inline" id="error-text"></span></div>
+                            <div id="transactions-container" class="overflow-x-auto">
+                                <p id="no-transactions" class="text-gray-500 text-center py-8">Nenhuma transação importada ainda.</p>
+                                <table id="transactions-table" class="min-w-full hidden"><thead class="bg-gray-50"><tr><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th><th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Valor (R$)</th><th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoria</th></tr></thead><tbody id="transactions-body" class="bg-white divide-y divide-gray-200"></tbody></table>
+                            </div>
+                            <div id="pagination-controls" class="hidden flex justify-between items-center mt-4"><button id="prev-page-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed">Anterior</button><span id="page-info" class="text-sm font-medium"></span><button id="next-page-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed">Próxima</button></div>
+                        </div>
+                    </div>
+
+                    <!-- Seção Planejamento -->
+                    <div id="planning-content" class="app-content hidden">
+                         <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                            <h2 class="text-2xl font-semibold mb-6">Planejamento Mensal</h2>
+                            <form id="planning-form">
+                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <!-- Coluna de Categorias -->
+                                    <div class="lg:col-span-1 bg-gray-50 p-4 rounded-lg">
+                                        <h3 class="font-semibold mb-4">Hora de planejar!</h3>
+                                        <p class="text-sm text-gray-600 mb-4">Preencha os campos abaixo com seus limites de gastos para cada categoria.</p>
+                                        <div id="planning-category-list" class="space-y-4 max-h-96 overflow-y-auto">
+                                            <!-- Categorias serão inseridas aqui -->
+                                        </div>
+                                    </div>
+                                    <!-- Coluna de Resumo -->
+                                    <div class="lg:col-span-2">
+                                        <div class="bg-gray-50 p-6 rounded-lg mb-6">
+                                            <h3 class="font-semibold mb-2">Renda Mensal</h3>
+                                            <input type="number" id="monthly-income" step="0.01" class="block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Quanto você ganha por mês?">
+                                        </div>
+                                        <div class="bg-white p-6 rounded-lg shadow-inner">
+                                            <div class="h-48 w-48 mx-auto mb-4">
+                                                <canvas id="planning-chart"></canvas>
+                                            </div>
+                                            <div class="text-center">
+                                                <p class="text-gray-600">Total Planejado</p>
+                                                <p id="planning-total-planned" class="text-2xl font-bold">R$ 0,00</p>
+                                                <p class="text-gray-500 text-sm mt-1">de <span id="planning-budget-total">R$ 0,00</span></p>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="mt-6 w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Salvar Planejamento</button>
+                                        <p id="planning-success-message" class="text-green-600 text-center mt-2 hidden">Planejamento salvo com sucesso!</p>
+                                    </div>
+                                </div>
+                            </form>
+                         </div>
+                    </div>
+
+                    <!-- Seção Metas -->
+                    <div id="goals-content" class="app-content hidden">
+                        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold">Minhas Metas</h2>
+                                <button id="add-goal-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">Adicionar Nova Meta</button>
+                            </div>
+                            <div id="goals-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <p id="no-goals-message" class="text-gray-500 md:col-span-2 lg:col-span-3 text-center py-4">Nenhuma meta cadastrada ainda.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção Configurações -->
+                    <div id="settings-content" class="app-content hidden">
+                        <div class="bg-white rounded-lg shadow-md p-6 mb-8 max-w-2xl mx-auto">
+                            <h2 class="text-2xl font-semibold mb-6">Configurações</h2>
+                            <form id="settings-form">
+                                <div class="space-y-6">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label for="setting-language" class="block text-sm font-medium text-gray-700">Idioma</label>
+                                            <select id="setting-language" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                                                <option>Português Brasil</option>
+                                                <option>English</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="setting-currency" class="block text-sm font-medium text-gray-700">Moeda</label>
+                                            <select id="setting-currency" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                                                <option>BRL (R$)</option>
+                                                <option>USD ($)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label for="setting-appearance" class="block text-sm font-medium text-gray-700">Aparência</label>
+                                        <select id="setting-appearance" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                                            <option value="light">Modo claro</option>
+                                            <option value="dark">Modo escuro</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">Salvar Alterações</button>
+                                    </div>
+                                    <p id="settings-success-message" class="text-green-600 text-center mt-2 hidden">Configurações salvas com sucesso!</p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
             </main>
         </div>
     </div>
 
-    <script type="module">
-        const { createClient } = supabase;
+    <!-- Modal Adicionar Conta -->
+    <div id="account-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="modal-container bg-white w-full max-w-md p-6 rounded-lg shadow-xl transform scale-95">
+            <!-- Passo 1: Seleção de Banco -->
+            <div id="modal-step-1">
+                <h2 class="text-2xl font-bold mb-4">Qual instituição você quer adicionar?</h2>
+                <input type="text" id="bank-search" class="w-full px-3 py-2 border border-gray-300 rounded-md mb-4" placeholder="Buscar por nome...">
+                <div id="bank-list" class="max-h-64 overflow-y-auto">
+                    <!-- Lista de bancos será inserida aqui -->
+                </div>
+                 <div class="flex justify-end mt-4">
+                    <button type="button" id="cancel-account-btn-step1" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400">Cancelar</button>
+                </div>
+            </div>
+            <!-- Passo 2: Detalhes da Conta -->
+            <div id="modal-step-2" class="hidden">
+                <div class="flex items-center mb-4">
+                    <button id="back-to-step1-btn" class="p-2 rounded-full hover:bg-gray-200 mr-2"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+                    <h2 class="text-2xl font-bold">Adicionar Nova Conta</h2>
+                </div>
+                <form id="add-account-form">
+                    <div class="mb-4"><label for="account-bank" class="block text-sm font-medium text-gray-700">Instituição</label><input type="text" id="account-bank" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" readonly></div>
+                    <div class="mb-4"><label for="account-name" class="block text-sm font-medium text-gray-700">Nome da Conta</label><input type="text" id="account-name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: Conta Corrente Principal" required></div>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div><label for="account-agency" class="block text-sm font-medium text-gray-700">Agência</label><input type="text" id="account-agency" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 0001"></div>
+                        <div><label for="account-number" class="block text-sm font-medium text-gray-700">Conta</label><input type="text" id="account-number" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 12345-6"></div>
+                    </div>
+                    <div class="mb-4"><label for="account-type" class="block text-sm font-medium text-gray-700">Tipo de Conta</label><select id="account-type" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"><option>Conta Corrente</option><option>Poupança</option><option>Investimentos</option><option>Carteira</option><option>Outro</option></select></div>
+                    <div class="mb-6"><label for="account-balance" class="block text-sm font-medium text-gray-700">Saldo Inicial (R$)</label><input type="number" id="account-balance" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="1000.00" required></div>
+                    <div class="flex justify-end gap-4"><button type="button" id="cancel-account-btn-step2" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400">Cancelar</button><button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Salvar Conta</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-        // --- CONFIGURAÇÃO E INICIALIZAÇÃO DO SUPABASE ---
-        const SUPABASE_URL = 'https://sxkxsgftbtzzinswywer.supabase.co'; 
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4a3hzZ2Z0YnR6emluc3d5d2VyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0MTc0MDYsImV4cCI6MjA2OTk5MzQwNn0.-O5fd9Vc2ylnQRxX2H0J1oYl3EzNgegGlLtfpaBeYOw';
+    <!-- Modal Adicionar Cartão de Crédito -->
+    <div id="credit-card-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="modal-container bg-white w-full max-w-md p-6 rounded-lg shadow-xl transform scale-95">
+            <h2 class="text-2xl font-bold mb-4">Novo Cartão de Crédito</h2>
+            <form id="add-credit-card-form">
+                <div class="mb-4"><label for="cc-limit" class="block text-sm font-medium text-gray-700">Limite</label><input type="number" id="cc-limit" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="5000.00" required></div>
+                <div class="mb-4"><label for="cc-description" class="block text-sm font-medium text-gray-700">Descrição</label><input type="text" id="cc-description" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: Nubank Ultravioleta" required></div>
+                <div class="mb-4"><label for="cc-brand" class="block text-sm font-medium text-gray-700">Bandeira</label><select id="cc-brand" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"><option>Visa</option><option>Mastercard</option><option>Elo</option><option>American Express</option><option>Outra</option></select></div>
+                <div class="mb-4"><label for="cc-account-link" class="block text-sm font-medium text-gray-700">Conta Associada</label><select id="cc-account-link" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required></select></div>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div><label for="cc-close-day" class="block text-sm font-medium text-gray-700">Dia de Fechamento</label><input type="number" id="cc-close-day" min="1" max="31" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 25" required></div>
+                    <div><label for="cc-due-day" class="block text-sm font-medium text-gray-700">Dia de Vencimento</label><input type="number" id="cc-due-day" min="1" max="31" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: 5" required></div>
+                </div>
+                <div class="flex justify-end gap-4"><button type="button" id="cancel-cc-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400">Cancelar</button><button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Salvar Cartão</button></div>
+            </form>
+        </div>
+    </div>
 
-        // --- REFERÊNCIAS DO DOM ---
-        const authView = document.getElementById('auth-view');
-        const mainLayout = document.getElementById('main-layout');
-        const mainContent = document.getElementById('main-content');
-        const loginContainer = document.getElementById('login-container');
-        const registerContainer = document.getElementById('register-container');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
+    <!-- Modal Adicionar Meta -->
+    <div id="goal-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="modal-container bg-white w-full max-w-md p-6 rounded-lg shadow-xl transform scale-95">
+            <h2 class="text-2xl font-bold mb-4">Adicionar Nova Meta</h2>
+            <form id="add-goal-form">
+                <div class="mb-4"><label for="goal-name" class="block text-sm font-medium text-gray-700">Nome da Meta</label><input type="text" id="goal-name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="Ex: Viagem para a Europa" required></div>
+                <div class="mb-4"><label for="goal-target" class="block text-sm font-medium text-gray-700">Valor Alvo (R$)</label><input type="number" id="goal-target" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="15000.00" required></div>
+                <div class="mb-6"><label for="goal-current" class="block text-sm font-medium text-gray-700">Valor Inicial Guardado (R$)</label><input type="number" id="goal-current" step="0.01" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="1000.00" required></div>
+                <div class="flex justify-end gap-4"><button type="button" id="cancel-goal-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400">Cancelar</button><button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Salvar Meta</button></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // --- Variáveis Globais e Constantes ---
+        let expenseChart, incomeChart, balanceChart, planningChart;
+        let userAccounts = [];
+        let userCreditCards = [];
+        let userGoals = [];
+        let monthlyPlan = { income: 0, categoryBudgets: {} };
+        let currentAccountId = null;
+        let currentPage = 1;
+        let currentDisplayDate = new Date();
+        const TRANSACTIONS_PER_PAGE = 50;
+
+        const CATEGORIES = ['Não categorizado', 'Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Educação', 'Investimentos', 'Salário', 'Outras Receitas', 'Outras Despesas'];
+        const EXPENSE_CATEGORIES = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Educação', 'Investimentos', 'Outras Despesas'];
+        const AUTO_CATEGORIZATION_MAP = {
+            'Alimentação': ['IFOOD', 'RESTAURANTE', 'MERCADO', 'PADARIA', 'LANCHONETE', 'SUPERMERCADO', 'HIPERMERCADO'],
+            'Transporte': ['UBER', '99', 'POSTO', 'GASOLINA', 'ESTACIONAMENTO', 'PASSAGEM AEREA', 'ONIBUS', 'METRO'],
+            'Moradia': ['ALUGUEL', 'CONDOMINIO', 'ENERGIA', 'AGUA', 'INTERNET', 'TELEFONE'],
+            'Saúde': ['FARMACIA', 'DROGARIA', 'HOSPITAL', 'PLANO DE SAUDE', 'CONSULTA MEDICA'],
+            'Lazer': ['CINEMA', 'NETFLIX', 'SPOTIFY', 'SHOW', 'TEATRO', 'VIAGEM'],
+            'Educação': ['ESCOLA', 'FACULDADE', 'CURSO', 'LIVRARIA'],
+            'Salário': ['SALARIO', 'PAGAMENTO', 'VENCIMENTO', 'CREDITO SALARIO'],
+        };
+        const BANKS = [
+            { name: 'Nubank', logo: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-9.41l4.24 4.24 1.41-1.41-4.24-4.24-1.41 1.41zm4.24-4.24l-4.24 4.24-1.41-1.41 4.24-4.24 1.41 1.41z" fill="#8A05BE"/></svg>' },
+            { name: 'Banco do Brasil', logo: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-2-12h4v2h-4v-2zm0 4h4v2h-4v-2zm0 4h4v2h-4v-2z" fill="#F7D51D"/></svg>' },
+            { name: 'Itaú', logo: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v10h-2V7z" fill="#EC7000"/></svg>' },
+            { name: 'Bradesco', logo: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm1-13h-2v10h2V7zm-4 2h2v2h-2V9zm4 0h2v2h-2V9z" fill="#CC092F"/></svg>' },
+            { name: 'Santander', logo: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v10h-2V7z" fill="#EA0000"/></svg>' },
+            { name: 'Caixa', logo: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v10h-2V7zm-4 4h2v2h-2v-2zm8 0h-2v2h2v-2z" fill="#0065A4"/></svg>' },
+            { name: 'Outro', logo: '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>' },
+        ];
+
+        // --- Gerenciamento de Telas e Modais ---
+        const loginScreen = document.getElementById('login-screen');
+        const registrationScreen = document.getElementById('registration-screen');
+        const appScreen = document.getElementById('app-screen');
         const showRegisterLink = document.getElementById('show-register-link');
         const showLoginLink = document.getElementById('show-login-link');
-        const authError = document.getElementById('auth-error');
-        const logoutButtonMain = document.getElementById('logout-button-main');
-        const mainNav = document.getElementById('main-nav');
+        const logoutButton = document.getElementById('logout-button');
+        const loginForm = document.getElementById('login-form');
+        const registrationForm = document.getElementById('registration-form');
         
-        // Modal de Termos
-        const termsModal = document.getElementById('terms-modal');
-        const openTermsLink = document.getElementById('open-terms-link');
-        const closeTermsModal = document.getElementById('close-terms-modal');
+        const accountModal = document.getElementById('account-modal');
+        const addAccountBtn = document.getElementById('add-account-btn');
+        const cancelAccountBtnStep1 = document.getElementById('cancel-account-btn-step1');
+        const cancelAccountBtnStep2 = document.getElementById('cancel-account-btn-step2');
+        const addAccountForm = document.getElementById('add-account-form');
+        const modalStep1 = document.getElementById('modal-step-1');
+        const modalStep2 = document.getElementById('modal-step-2');
+        const backToStep1Btn = document.getElementById('back-to-step1-btn');
+        const bankSearchInput = document.getElementById('bank-search');
+        const bankListEl = document.getElementById('bank-list');
 
-        // Modal OFX
-        const ofxModal = document.getElementById('ofx-modal');
-        const ofxForm = document.getElementById('ofx-form');
-        const ofxModalCancelBtn = document.getElementById('ofx-modal-cancel-btn');
-        const ofxbank_accountselect = document.getElementById('ofx-account-select');
-        const ofxFileInput = document.getElementById('ofx-file-input');
+        const creditCardModal = document.getElementById('credit-card-modal');
+        const addCreditCardBtn = document.getElementById('add-credit-card-btn');
+        const cancelCreditCardBtn = document.getElementById('cancel-cc-btn');
+        const addCreditCardForm = document.getElementById('add-credit-card-form');
+        const ccAccountLinkSelect = document.getElementById('cc-account-link');
 
-        // VERIFICAÇÃO DE CONFIGURAÇÃO
-        if (SUPABASE_URL.includes('YOUR_SUPABASE_URL') || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY')) {
-            authView.innerHTML = `<div class="p-8 text-center text-red-500 bg-red-100 rounded-lg"><strong>Erro de Configuração:</strong> As chaves de API do Supabase não foram configuradas corretamente no script.</div>`;
-            throw new Error("Supabase não configurado.");
+        const goalModal = document.getElementById('goal-modal');
+        const addGoalBtn = document.getElementById('add-goal-btn');
+        const cancelGoalBtn = document.getElementById('cancel-goal-btn');
+        const addGoalForm = document.getElementById('add-goal-form');
+
+        const sidebarLinks = document.querySelectorAll('.sidebar-link');
+        const contentSections = document.querySelectorAll('.app-content');
+
+        function showScreen(screen) {
+            loginScreen.classList.add('hidden');
+            registrationScreen.classList.add('hidden');
+            appScreen.classList.add('hidden');
+            screen.classList.remove('hidden');
         }
 
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let currentUser = null;
-        let allTransactions = [];
-        let userbank_accounts = [];
-        let userCategories = [];
-        let parsedOfxTransactions = [];
-        let incomeChart, expenseChart;
-
-        // --- LÓGICA DE UI (MODAIS, NOTIFICAÇÕES) ---
-        const showToast = (message, isError = true) => {
-            const toast = document.getElementById('toast-notification');
-            const toastMessage = document.getElementById('toast-message');
-
-            toast.className = `fixed top-5 right-5 z-[100] text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-300 opacity-0 transform translate-y-[-20px] ${isError ? 'bg-red-600' : 'bg-green-600'}`;
-            toastMessage.textContent = message;
-
-            toast.classList.remove('hidden', 'opacity-0', 'translate-y-[-20px]');
-            setTimeout(() => {
-                toast.classList.remove('opacity-0');
-                toast.classList.add('opacity-100', 'translate-y-0');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.remove('opacity-100', 'translate-y-0');
-                toast.classList.add('opacity-0');
-                setTimeout(() => toast.classList.add('hidden'), 300);
-            }, 4000);
-        };
-
-        const showModal = (modal) => {
-            modal.classList.remove('hidden');
-            setTimeout(() => modal.classList.remove('opacity-0'), 10);
-        };
-        const hideModal = (modal) => {
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.classList.add('hidden'), 300);
-        };
-        
-        openTermsLink.addEventListener('click', (e) => { e.preventDefault(); showModal(termsModal); });
-        closeTermsModal.addEventListener('click', () => hideModal(termsModal));
-        ofxModalCancelBtn.addEventListener('click', () => hideModal(ofxModal));
-
-        // --- AUTENTICAÇÃO E UI ---
-        showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); loginContainer.classList.add('hidden'); registerContainer.classList.remove('hidden'); authError.textContent = ''; });
-        showLoginLink.addEventListener('click', (e) => { e.preventDefault(); registerContainer.classList.add('hidden'); loginContainer.classList.remove('hidden'); authError.textContent = ''; });
-        
-        supabaseClient.auth.onAuthStateChange(async (event, session) => {
-            if (session && session.user) {
-                currentUser = session.user;
-                authView.classList.add('hidden');
-                mainLayout.classList.remove('hidden');
-                await loadInitialData();
-                handleNavigation();
-            } else {
-                currentUser = null;
-                mainLayout.classList.add('hidden');
-                authView.classList.remove('hidden');
-            }
-        });
-
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const fullName = registerForm['register-name'].value;
-            const email = registerForm['register-email'].value;
-            const password = registerForm['register-password'].value;
-            const passwordConfirm = registerForm['register-password-confirm'].value;
-            const termsAccepted = registerForm['register-terms'].checked;
-            authError.textContent = '';
-
-            if (password !== passwordConfirm) { authError.textContent = 'As senhas não coincidem.'; return; }
-            if (password.length < 8) { authError.textContent = 'A senha deve ter pelo menos 8 caracteres.'; return; }
-            if (!termsAccepted) { authError.textContent = 'Você precisa de aceitar os Termos de Uso.'; return; }
-
-            const { data, error } = await supabaseClient.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
-            if (error) {
-                console.error('Sign Up Error:', error);
-                authError.textContent = 'Erro no registo: ' + error.message; 
-            }
-            else if (data.user) { authError.textContent = 'Registo realizado! Verifique o seu e-mail para confirmação.'; registerForm.reset(); }
-        });
-
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = loginForm['login-email'].value;
-            const password = loginForm['login-password'].value;
-            authError.textContent = '';
-            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-            if (error) {
-                console.error('Sign In Error:', error);
-                authError.textContent = 'E-mail ou senha inválidos.'; 
-            }
-        });
-
-        logoutButtonMain.addEventListener('click', async () => { 
-            const { error } = await supabaseClient.auth.signOut();
-            if (error) {
-                console.error('Error signing out:', error);
-                showToast('Erro ao sair: ' + error.message, true);
-            } else {
-                // Força a recarga da página para garantir um estado limpo e a exibição da tela de login.
-                window.location.reload();
-            }
-        });
-
-        // --- NAVEGAÇÃO (SPA) ---
-        window.addEventListener('hashchange', handleNavigation);
-        
-        function handleNavigation() {
-            const hash = window.location.hash || '#dashboard';
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.toggle('active', link.hash === hash);
+        function showContent(targetId) {
+            contentSections.forEach(section => {
+                section.classList.add('hidden');
             });
-            
-            switch(hash) {
-                case '#bank_accounts':
-                    renderbank_accountsPage();
-                    break;
-                case '#dashboard':
-                default:
-                    renderDashboardPage();
-                    break;
-            }
-        }
-        
-        // --- LÓGICA DE DADOS ---
-        async function loadInitialData() {
-            if (!currentUser) return;
-            const { data: bank_accounts, error: bank_accountsError } = await supabaseClient.from('bank_accounts').select('*');
-            if (bank_accountsError) console.error("Error fetching bank_accounts:", bank_accountsError);
-            userbank_accounts = bank_accounts || [];
-            
-            const { data: categories, error: categoriesError } = await supabaseClient.from('categories').select('*');
-            if (categoriesError) console.error("Error fetching categories:", categoriesError);
-            userCategories = categories || [];
+            document.getElementById(targetId).classList.remove('hidden');
 
-            const { data: transactions, error: transactionsError } = await supabaseClient.from('transactions').select('*');
-            if(transactionsError) console.error("Error fetching transactions:", transactionsError);
-            allTransactions = transactions || [];
-        }
-
-        // --- RENDERIZAÇÃO DAS PÁGINAS ---
-        function renderDashboardPage() {
-            mainContent.innerHTML = `
-                <header class="flex flex-wrap items-center justify-between mb-8">
-                    <div>
-                        <h1 class="text-3xl font-bold text-zinc-900 dark:text-white">Dashboard</h1>
-                        <p id="user-info" class="text-zinc-500 dark:text-zinc-400">Bem-vindo(a), <span class="font-medium">${currentUser.user_metadata?.full_name || currentUser.email}</span></p>
-                    </div>
-                    <div class="flex items-center space-x-4 mt-4 md:mt-0">
-                         <button id="import-ofx-btn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Importar OFX</button>
-                    </div>
-                </header>
-                <div class="mb-6">
-                    <div id="period-filter" class="flex items-center space-x-2 bg-zinc-200 dark:bg-zinc-800 p-1 rounded-lg max-w-xs">
-                        <button data-period="day" class="filter-btn w-full px-4 py-1.5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 rounded-md transition-colors">Dia</button>
-                        <button data-period="month" class="filter-btn w-full px-4 py-1.5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 rounded-md transition-colors active">Mês</button>
-                        <button data-period="year" class="filter-btn w-full px-4 py-1.5 text-sm font-semibold text-zinc-600 dark:text-zinc-300 rounded-md transition-colors">Ano</button>
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><h3 class="text-lg font-semibold text-zinc-500 dark:text-zinc-400">Receitas</h3><p id="income-total" class="text-3xl font-bold text-green-500">R$ 0,00</p></div>
-                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><h3 class="text-lg font-semibold text-zinc-500 dark:text-zinc-400">Despesas</h3><p id="expense-total" class="text-3xl font-bold text-red-500">R$ 0,00</p></div>
-                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><h3 class="text-lg font-semibold text-zinc-500 dark:text-zinc-400">Saldo do Período</h3><p id="balance-total" class="text-3xl font-bold text-sky-500">R$ 0,00</p></div>
-                </div>
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><h3 class="text-xl font-bold mb-4">Receitas por Categoria</h3><div class="chart-container"><canvas id="income-chart"></canvas></div></div>
-                    <div class="p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm"><h3 class="text-xl font-bold mb-4">Despesas por Categoria</h3><div class="chart-container"><canvas id="expense-chart"></canvas></div></div>
-                </div>
-            `;
-            document.getElementById('import-ofx-btn').addEventListener('click', openOfxModal);
-            document.getElementById('period-filter').addEventListener('click', handlePeriodFilter);
-            updateDashboard();
-        }
-
-        function renderbank_accountsPage() {
-            mainContent.innerHTML = `
-                <h2 class="text-3xl font-bold text-zinc-900 dark:text-white mb-6">Contas Bancárias</h2>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div class="lg:col-span-1 p-6 bg-white dark:bg-zinc-800 rounded-xl shadow-sm">
-                        <h3 class="text-xl font-bold mb-4">Adicionar Nova Conta</h3>
-                        <form id="add-account-form" class="space-y-4">
-                            <input type="text" id="account-name" placeholder="Apelido da Conta (ex: Itaú Principal)" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            <select id="bank-name" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500"></select>
-                            <input type="text" id="agency" placeholder="Agência" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            <input type="text" id="account-number" placeholder="Número da Conta" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            <input type="text" id="owner-document" placeholder="CPF ou CNPJ do Titular" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            <input type="number" id="initial-balance" placeholder="Saldo Inicial" step="0.01" required class="w-full px-4 py-2 text-zinc-800 bg-zinc-100 dark:bg-zinc-700 dark:text-zinc-200 border border-zinc-300 dark:border-zinc-600 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
-                            <button type="submit" class="w-full py-2.5 font-semibold text-white bg-sky-500 rounded-md hover:bg-sky-600 transition-all">Adicionar Conta</button>
-                        </form>
-                    </div>
-                    <div id="bank-bank_accounts-list" class="lg:col-span-2 space-y-4">
-                        <!-- Lista de contas será renderizada aqui -->
-                    </div>
-                </div>
-            `;
-            setupbank_accountsPage();
-        }
-
-        // --- LÓGICA DAS PÁGINAS (SETUP E UPDATES) ---
-        function setupbank_accountsPage() {
-            const form = document.getElementById('add-account-form');
-            const bankSelect = document.getElementById('bank-name');
-            const listContainer = document.getElementById('bank-bank_accounts-list');
-            
-            const brazilianBanks = [{ code: '001', name: 'Banco do Brasil S.A.' }, { code: '237', name: 'Bradesco S.A.' }, { code: '341', name: 'Itaú Unibanco S.A.' }, { code: '104', name: 'Caixa Econômica Federal' }, { code: '033', name: 'Santander (Brasil) S.A.' }, { code: '260', name: 'Nu Pagamentos S.A. (Nubank)' }, { code: '077', name: 'Banco Inter S.A.' }];
-            bankSelect.innerHTML = '<option value="">Selecione o Banco</option>' + brazilianBanks.map(b => `<option value="${b.name}">${b.name}</option>`).join('');
-
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const newAccount = {
-                    name: form['account-name'].value,
-                    bank_name: form['bank-name'].value,
-                    agency: form['agency'].value,
-                    account_number: form['account-number'].value,
-                    owner_document: form['owner-document'].value,
-                    balance: parseFloat(form['initial-balance'].value),
-                    user_id: currentUser.id,
-                };
-
-                const { error } = await supabaseClient.from('bank_accounts').insert(newAccount);
-                if (error) {
-                    console.error("Error adding account:", error);
-                    showToast(`Erro: ${error.message} (código: ${error.code})`, true);
-                } else {
-                    showToast('Conta adicionada com sucesso!', false);
-                    form.reset();
-                    await loadInitialData();
-                    renderAccountList(listContainer);
+            sidebarLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.dataset.target === targetId) {
+                    link.classList.add('active');
                 }
             });
-
-            renderAccountList(listContainer);
         }
+
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                showContent(e.currentTarget.dataset.target);
+            });
+        });
+
+        const openModal = (modal) => {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('.modal-container').classList.remove('scale-95');
+            }, 10);
+        };
+        const closeModal = (modal) => {
+             modal.classList.add('opacity-0');
+             const modalContainer = modal.querySelector('.modal-container');
+             if (modalContainer) {
+                modalContainer.classList.add('scale-95');
+             }
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        };
+
+        showRegisterLink.addEventListener('click', (e) => { e.preventDefault(); showScreen(registrationScreen); });
+        showLoginLink.addEventListener('click', (e) => { e.preventDefault(); showScreen(loginScreen); });
+        logoutButton.addEventListener('click', (e) => { e.preventDefault(); showScreen(loginScreen); });
+        addAccountBtn.addEventListener('click', () => {
+            modalStep1.classList.remove('hidden');
+            modalStep2.classList.add('hidden');
+            openModal(accountModal);
+        });
+        cancelAccountBtnStep1.addEventListener('click', () => closeModal(accountModal));
+        cancelAccountBtnStep2.addEventListener('click', () => closeModal(accountModal));
+        backToStep1Btn.addEventListener('click', () => {
+            modalStep2.classList.add('hidden');
+            modalStep1.classList.remove('hidden');
+        });
+        addCreditCardBtn.addEventListener('click', () => openModal(creditCardModal));
+        cancelCreditCardBtn.addEventListener('click', () => closeModal(creditCardModal));
+        addGoalBtn.addEventListener('click', () => openModal(goalModal));
+        cancelGoalBtn.addEventListener('click', () => closeModal(goalModal));
+
+        loginForm.addEventListener('submit', (e) => { e.preventDefault(); if (document.getElementById('login-email').value && document.getElementById('login-password').value) { showScreen(appScreen); showContent('dashboard-content'); updateDashboard(); } else { alert("Por favor, preencha o email e a senha."); } });
+        registrationForm.addEventListener('submit', (e) => { e.preventDefault(); const password = document.getElementById('reg-password').value; const passwordConfirm = document.getElementById('reg-password-confirm').value; if (password !== passwordConfirm) { alert("As senhas não coincidem!"); return; } alert("Cadastro realizado com sucesso! (Simulação)"); showScreen(appScreen); showContent('dashboard-content'); updateDashboard(); });
+
+        // --- Lógica de Contas Bancárias e Cartões ---
+        const accountsListEl = document.getElementById('accounts-list');
+        const noAccountsMessage = document.getElementById('no-accounts-message');
+        const accountSelectForUpload = document.getElementById('account-select-for-upload');
+        const creditCardsListEl = document.getElementById('credit-cards-list');
+        const noCreditCardsMessage = document.getElementById('no-credit-cards-message');
+        const goalsListEl = document.getElementById('goals-list');
+        const noGoalsMessage = document.getElementById('no-goals-message');
+
+        addAccountForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newAccount = {
+                id: Date.now(),
+                name: document.getElementById('account-name').value,
+                bank: document.getElementById('account-bank').value,
+                agency: document.getElementById('account-agency').value,
+                accountNumber: document.getElementById('account-number').value,
+                type: document.getElementById('account-type').value,
+                initialBalance: parseFloat(document.getElementById('account-balance').value),
+                transactions: []
+            };
+            userAccounts.push(newAccount);
+            renderAccounts();
+            updateDashboard();
+            addAccountForm.reset();
+            closeModal(accountModal);
+        });
+
+        addCreditCardForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newCard = {
+                id: Date.now(),
+                limit: parseFloat(document.getElementById('cc-limit').value),
+                description: document.getElementById('cc-description').value,
+                brand: document.getElementById('cc-brand').value,
+                linkedAccountId: parseInt(document.getElementById('cc-account-link').value),
+                closeDay: parseInt(document.getElementById('cc-close-day').value),
+                dueDay: parseInt(document.getElementById('cc-due-day').value),
+            };
+            userCreditCards.push(newCard);
+            renderCreditCards();
+            updateDashboard();
+            addCreditCardForm.reset();
+            closeModal(creditCardModal);
+        });
+
+        addGoalForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const newGoal = {
+                id: Date.now(),
+                name: document.getElementById('goal-name').value,
+                targetAmount: parseFloat(document.getElementById('goal-target').value),
+                currentAmount: parseFloat(document.getElementById('goal-current').value),
+            };
+            userGoals.push(newGoal);
+            renderGoals();
+            addGoalForm.reset();
+            closeModal(goalModal);
+        });
+
+        function renderAccounts() {
+            accountsListEl.innerHTML = '';
+            accountSelectForUpload.innerHTML = '<option value="">-- Selecione --</option>';
+            ccAccountLinkSelect.innerHTML = '<option value="">-- Vincular a uma conta --</option>';
+            
+            if (userAccounts.length === 0) {
+                accountsListEl.appendChild(noAccountsMessage);
+                noAccountsMessage.classList.remove('hidden');
+                document.getElementById('upload-button').disabled = true;
+            } else {
+                noAccountsMessage.classList.add('hidden');
+                document.getElementById('upload-button').disabled = false;
+            }
+
+            userAccounts.forEach(account => {
+                const accountCard = document.createElement('div');
+                accountCard.className = 'bg-white p-4 rounded-lg border shadow-sm';
+                const currentBalance = account.transactions.reduce((acc, trans) => acc + trans.amount, account.initialBalance);
+                accountCard.innerHTML = `
+                    <h3 class="font-bold text-lg">${account.name}</h3>
+                    <p class="text-sm text-gray-600">${account.bank} - ${account.type}</p>
+                    <p class="text-xs text-gray-500 mt-1">Ag: ${account.agency || 'N/A'} | C/C: ${account.accountNumber || 'N/A'}</p>
+                    <p class="text-2xl font-semibold mt-2 ${currentBalance >= 0 ? 'text-green-600' : 'text-red-600'}">${formatCurrency(currentBalance)}</p>
+                `;
+                accountsListEl.appendChild(accountCard);
+
+                const option = document.createElement('option');
+                option.value = account.id;
+                option.textContent = `${account.name} (${account.bank})`;
+                accountSelectForUpload.appendChild(option.cloneNode(true));
+                ccAccountLinkSelect.appendChild(option);
+            });
+        }
+
+        function renderCreditCards() {
+            creditCardsListEl.innerHTML = '';
+            if (userCreditCards.length === 0) {
+                creditCardsListEl.appendChild(noCreditCardsMessage);
+                noCreditCardsMessage.classList.remove('hidden');
+            } else {
+                noCreditCardsMessage.classList.add('hidden');
+            }
+
+            userCreditCards.forEach(card => {
+                const cardEl = document.createElement('div');
+                cardEl.className = 'bg-white p-4 rounded-lg border shadow-sm';
+                cardEl.innerHTML = `
+                    <h3 class="font-bold text-lg">${card.description}</h3>
+                    <p class="text-sm text-gray-600">${card.brand}</p>
+                    <p class="text-xs text-gray-500 mt-1">Limite: ${formatCurrency(card.limit)}</p>
+                    <p class="text-xs text-gray-500">Fecha dia ${card.closeDay} | Vence dia ${card.dueDay}</p>
+                `;
+                creditCardsListEl.appendChild(cardEl);
+            });
+        }
+
+        function renderGoals() {
+            goalsListEl.innerHTML = '';
+            if (userGoals.length === 0) {
+                goalsListEl.appendChild(noGoalsMessage);
+                noGoalsMessage.classList.remove('hidden');
+            } else {
+                noGoalsMessage.classList.add('hidden');
+            }
+
+            userGoals.forEach(goal => {
+                const percentage = Math.min((goal.currentAmount / goal.targetAmount) * 100, 100);
+                const goalCard = document.createElement('div');
+                goalCard.className = 'bg-white p-4 rounded-lg border shadow-sm';
+                goalCard.innerHTML = `
+                    <h3 class="font-bold text-lg">${goal.name}</h3>
+                    <div class="flex justify-between items-center text-sm mt-2">
+                        <span class="text-green-600 font-medium">${formatCurrency(goal.currentAmount)}</span>
+                        <span class="text-gray-500">${formatCurrency(goal.targetAmount)}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                        <div class="bg-green-500 h-2.5 rounded-full" style="width: ${percentage}%"></div>
+                    </div>
+                    <p class="text-right text-xs text-gray-500 mt-1">${percentage.toFixed(1)}%</p>
+                `;
+                goalsListEl.appendChild(goalCard);
+            });
+        }
+
+        // --- Lógica do Gerenciador Financeiro ---
+        const uploadButton = document.getElementById('upload-button');
+        const fileInput = document.getElementById('ofx-file-input');
+        const fileNameDisplay = document.getElementById('file-name');
+        const transactionsSection = document.getElementById('transactions-section');
+        const transactionsTable = document.getElementById('transactions-table');
+        const transactionsBody = document.getElementById('transactions-body');
+        const noTransactionsMessage = document.getElementById('no-transactions');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const hideCategorizedToggle = document.getElementById('hide-categorized-toggle');
         
-        function renderAccountList(container) {
-            if (!container) return;
-            if (userbank_accounts.length === 0) {
-                container.innerHTML = `<p class="text-center text-zinc-500 dark:text-zinc-400 col-span-2">Nenhuma conta encontrada. Adicione uma para começar.</p>`;
+        const paginationControls = document.getElementById('pagination-controls');
+        const prevPageBtn = document.getElementById('prev-page-btn');
+        const nextPageBtn = document.getElementById('next-page-btn');
+        const pageInfo = document.getElementById('page-info');
+        
+        const monthDisplay = document.getElementById('month-display');
+        const prevMonthBtn = document.getElementById('prev-month-btn');
+        const nextMonthBtn = document.getElementById('next-month-btn');
+
+        const planningForm = document.getElementById('planning-form');
+        const monthlyIncomeInput = document.getElementById('monthly-income');
+        const planningCategoryList = document.getElementById('planning-category-list');
+        const planningTotalPlannedEl = document.getElementById('planning-total-planned');
+        const planningBudgetTotalEl = document.getElementById('planning-budget-total');
+        const planningSuccessMessage = document.getElementById('planning-success-message');
+
+        const settingsForm = document.getElementById('settings-form');
+        const settingsAppearance = document.getElementById('setting-appearance');
+        const settingsSuccessMessage = document.getElementById('settings-success-message');
+
+        uploadButton.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+        hideCategorizedToggle.addEventListener('change', filterCategorizedTransactions);
+        
+        prevPageBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                const targetAccount = userAccounts.find(acc => acc.id === currentAccountId);
+                displayTransactions(targetAccount.transactions);
+            }
+        });
+        nextPageBtn.addEventListener('click', () => {
+            const targetAccount = userAccounts.find(acc => acc.id === currentAccountId);
+            const totalPages = Math.ceil(targetAccount.transactions.length / TRANSACTIONS_PER_PAGE);
+            if (currentPage < totalPages) {
+                currentPage++;
+                displayTransactions(targetAccount.transactions);
+            }
+        });
+
+        prevMonthBtn.addEventListener('click', () => {
+            currentDisplayDate.setMonth(currentDisplayDate.getMonth() - 1);
+            const targetAccount = userAccounts.find(acc => acc.id === currentAccountId);
+            if (targetAccount) displayTransactions(targetAccount.transactions);
+        });
+        nextMonthBtn.addEventListener('click', () => {
+            currentDisplayDate.setMonth(currentDisplayDate.getMonth() + 1);
+            const targetAccount = userAccounts.find(acc => acc.id === currentAccountId);
+            if (targetAccount) displayTransactions(targetAccount.transactions);
+        });
+
+        function autoCategorize(description) {
+            const upperDescription = description.toUpperCase();
+            for (const category in AUTO_CATEGORIZATION_MAP) {
+                for (const keyword of AUTO_CATEGORIZATION_MAP[category]) {
+                    if (upperDescription.includes(keyword)) { return category; }
+                }
+            }
+            return 'Não categorizado';
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            currentAccountId = parseInt(accountSelectForUpload.value);
+
+            if (!file) return;
+            if (!currentAccountId) {
+                alert("Por favor, selecione uma conta antes de importar o extrato.");
                 return;
             }
-            container.innerHTML = userbank_accounts.map(account => `
-                <div class="bg-white dark:bg-zinc-700 p-4 rounded-lg shadow-sm flex justify-between items-center">
-                    <div>
-                        <p class="font-bold text-zinc-800 dark:text-white">${account.name}</p>
-                        <p class="text-sm text-zinc-500 dark:text-zinc-400">${account.bank_name}</p>
-                        <p class="text-sm text-zinc-500 dark:text-zinc-400">Ag: ${account.agency} / CC: ${account.account_number}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-bold text-lg ${account.balance >= 0 ? 'text-green-500' : 'text-red-500'}">${formatCurrency(account.balance)}</p>
-                    </div>
-                </div>
-            `).join('');
-        }
 
-        function filterTransactionsByPeriod(period) {
-            const now = new Date();
-            let startDate;
-            if (period === 'day') {
-                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            } else if (period === 'month') {
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-            } else if (period === 'year') {
-                startDate = new Date(now.getFullYear(), 0, 1);
-            }
-            return allTransactions.filter(tx => new Date(tx.date) >= startDate);
-        }
-
-        function updateDashboard() {
-            const period = document.querySelector('#period-filter .active')?.dataset.period || 'month';
-            const filteredTransactions = filterTransactionsByPeriod(period);
-            let income = 0, expense = 0;
-            const incomeByCategory = {}, expenseByCategory = {};
-
-            filteredTransactions.forEach(tx => {
-                const category = userCategories.find(c => c.id === tx.category_id)?.name || 'Sem Categoria';
-                if (tx.amount > 0) { income += tx.amount; incomeByCategory[category] = (incomeByCategory[category] || 0) + tx.amount; } 
-                else { expense += Math.abs(tx.amount); expenseByCategory[category] = (expenseByCategory[category] || 0) + Math.abs(tx.amount); }
-            });
+            resetOFXUI();
+            fileNameDisplay.textContent = `Arquivo: ${file.name}`;
+            loadingSpinner.classList.remove('hidden');
             
-            document.getElementById('income-total').textContent = formatCurrency(income);
-            document.getElementById('expense-total').textContent = formatCurrency(expense);
-            document.getElementById('balance-total').textContent = formatCurrency(income - expense);
-
-            renderPieChart('income', document.getElementById('income-chart'), 'Receitas', incomeByCategory);
-            renderPieChart('expense', document.getElementById('expense-chart'), 'Despesas', expenseByCategory);
-        }
-        
-        function renderPieChart(type, canvas, label, data) {
-            if (!canvas) return;
-            let chartInstance = type === 'income' ? incomeChart : expenseChart;
-            if (chartInstance) { chartInstance.destroy(); }
-            
-            const labels = Object.keys(data);
-            const values = Object.values(data);
-            const chartColors = type === 'income' ? ['#16a34a', '#22c55e', '#4ade80'] : ['#dc2626', '#ef4444', '#f87171'];
-
-            chartInstance = new Chart(canvas.getContext('2d'), {
-                type: 'pie',
-                data: { labels, datasets: [{ label, data: values, backgroundColor: chartColors, borderColor: document.documentElement.classList.contains('dark') ? '#1f2937' : '#fff', borderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: document.documentElement.classList.contains('dark') ? '#d1d5db' : '#374151' } } } }
-            });
-            if (type === 'income') incomeChart = chartInstance; else expenseChart = chartInstance;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    setTimeout(() => parseOfx(e.target.result, currentAccountId), 500);
+                } catch (error) {
+                    showError("Ocorreu um erro ao ler o arquivo.");
+                }
+            };
+            reader.onerror = () => showError("Não foi possível ler o arquivo.");
+            reader.readAsText(file, 'UTF-8');
         }
 
-        function handlePeriodFilter(e) {
-            if (e.target.tagName === 'BUTTON') {
-                document.querySelectorAll('#period-filter .filter-btn').forEach(btn => btn.classList.remove('active'));
-                e.target.classList.add('active');
+        function parseOfx(ofxContent, accountId) {
+            try {
+                const xmlContent = `<OFX>${ofxContent.split('<OFX>')[1]}`;
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlContent, "application/xml");
+                if (xmlDoc.getElementsByTagName("parsererror").length) throw new Error("O arquivo não parece ser um OFX ou XML válido.");
+                
+                const orgNameFromOfx = xmlDoc.getElementsByTagName('ORG')[0]?.textContent.trim().toUpperCase();
+                const targetAccount = userAccounts.find(acc => acc.id === accountId);
+                if (!targetAccount) throw new Error("Conta selecionada não encontrada.");
+                const bankNameFromAccount = targetAccount.bank.trim().toUpperCase();
+
+                if (orgNameFromOfx && !orgNameFromOfx.includes(bankNameFromAccount) && !bankNameFromAccount.includes(orgNameFromOfx)) {
+                    throw new Error(`Este extrato é do "${xmlDoc.getElementsByTagName('ORG')[0]?.textContent}", mas a conta selecionada é do "${targetAccount.bank}". Por favor, selecione a conta correta.`);
+                }
+
+                const ofxTransactions = xmlDoc.getElementsByTagName('STMTTRN');
+                if (ofxTransactions.length === 0) throw new Error("Nenhuma transação encontrada no arquivo.");
+                
+                let newTransactionsCount = 0;
+                for (const transaction of ofxTransactions) {
+                    const fitId = transaction.getElementsByTagName('FITID')[0]?.textContent;
+                    if (targetAccount.transactions.some(t => t.id === fitId)) {
+                        continue;
+                    }
+                    
+                    const amount = parseFloat(transaction.getElementsByTagName('TRNAMT')[0]?.textContent);
+                    const memo = transaction.getElementsByTagName('MEMO')[0]?.textContent;
+                    const datePosted = transaction.getElementsByTagName('DTPOSTED')[0]?.textContent;
+
+                    if (!amount || !memo || !datePosted) continue;
+
+                    targetAccount.transactions.push({
+                        id: fitId,
+                        amount: amount,
+                        description: memo,
+                        date: `${datePosted.substring(6, 8)}/${datePosted.substring(4, 6)}/${datePosted.substring(0, 4)}`,
+                        rawDate: datePosted.substring(0, 8),
+                        category: autoCategorize(memo)
+                    });
+                    newTransactionsCount++;
+                }
+                
+                targetAccount.transactions.sort((a, b) => b.rawDate.localeCompare(a.rawDate));
+                
+                if(targetAccount.transactions.length > 0) {
+                    const latestDate = targetAccount.transactions[0].rawDate;
+                    currentDisplayDate = new Date(latestDate.substring(0,4), latestDate.substring(4,6) - 1, 1);
+                }
+
+                currentPage = 1;
+                displayTransactions(targetAccount.transactions);
+                renderAccounts(); 
                 updateDashboard();
+                filterCategorizedTransactions();
+
+            } catch (error) {
+                console.error("Erro no parsing do OFX:", error);
+                showError(error.message || "Erro ao processar o arquivo.");
+            } finally {
+                loadingSpinner.classList.add('hidden');
             }
         }
 
-        function formatCurrency(value) {
-            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-        }
+        function displayTransactions(accountTransactions) {
+            transactionsBody.innerHTML = '';
+            
+            updateMonthNavigator();
 
-        // --- LÓGICA DE IMPORTAÇÃO OFX ---
-        function openOfxModal() {
-            if (userbank_accounts.length === 0) { showToast('Adicione uma conta bancária antes de importar.', true); return; }
-            ofxbank_accountselect.innerHTML = userbank_accounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join('');
-            showModal(ofxModal);
-        }
+            const filteredTransactions = accountTransactions.filter(t => {
+                const transactionDate = new Date(t.rawDate.substring(0,4), t.rawDate.substring(4,6) - 1, t.rawDate.substring(6,8));
+                return transactionDate.getMonth() === currentDisplayDate.getMonth() && transactionDate.getFullYear() === currentDisplayDate.getFullYear();
+            });
 
-        ofxFileInput.addEventListener('change', (e) => {
-            const files = e.target.files;
-            if (!files || files.length === 0) return;
-            parsedOfxTransactions = [];
-            const filePromises = Array.from(files).map(file => {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (event) => { try { resolve(parseOfx(event.target.result)); } catch (error) { reject(error); } };
-                    reader.onerror = () => reject(new Error(`Erro ao ler o ficheiro: ${file.name}`));
-                    reader.readAsText(file);
+            if (!filteredTransactions || filteredTransactions.length === 0) {
+                noTransactionsMessage.textContent = `Nenhum resultado para ${currentDisplayDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}.`;
+                noTransactionsMessage.classList.remove('hidden');
+                transactionsTable.classList.add('hidden');
+                paginationControls.classList.add('hidden');
+                return;
+            }
+
+            const totalPages = Math.ceil(filteredTransactions.length / TRANSACTIONS_PER_PAGE);
+            const startIndex = (currentPage - 1) * TRANSACTIONS_PER_PAGE;
+            const endIndex = startIndex + TRANSACTIONS_PER_PAGE;
+            const paginatedTransactions = filteredTransactions.slice(startIndex, endIndex);
+
+            const groupedByDate = paginatedTransactions.reduce((acc, trans) => {
+                const date = trans.date;
+                if (!acc[date]) {
+                    acc[date] = { transactions: [], totalIncome: 0, totalExpenses: 0 };
+                }
+                acc[date].transactions.push(trans);
+                if (trans.amount > 0) acc[date].totalIncome += trans.amount;
+                else acc[date].totalExpenses += trans.amount;
+                return acc;
+            }, {});
+
+            const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.split('/').reverse().join('').localeCompare(a.split('/').reverse().join('')));
+
+            sortedDates.forEach(date => {
+                const group = groupedByDate[date];
+                const summaryRow = document.createElement('tr');
+                summaryRow.className = 'bg-gray-100 summary-row';
+                const formattedIncome = formatCurrency(group.totalIncome);
+                const formattedExpenses = formatCurrency(Math.abs(group.totalExpenses));
+                summaryRow.innerHTML = `<td class="px-6 py-2 text-sm font-bold" colspan="2">${date}</td><td class="px-6 py-2 text-sm font-bold text-right" colspan="2"><span class="text-green-600 mr-4">Entradas: ${formattedIncome}</span><span class="text-red-600">Saídas: ${formattedExpenses}</span></td>`;
+                transactionsBody.appendChild(summaryRow);
+
+                group.transactions.forEach(trans => {
+                    const row = document.createElement('tr');
+                    row.dataset.transactionId = trans.id;
+                    const amountColor = trans.amount < 0 ? 'text-red-600' : 'text-green-600';
+                    const formattedAmount = formatCurrency(trans.amount);
+                    row.innerHTML = `<td class="px-6 py-4"></td><td class="px-6 py-4 text-sm text-gray-800 font-medium">${trans.description}</td><td class="px-6 py-4 text-sm text-right font-semibold ${amountColor}">${formattedAmount}</td><td class="px-6 py-4 text-sm"><select class="category-select bg-white border border-gray-300 rounded-md shadow-sm p-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500">${CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('')}</select></td>`;
+                    const selectElement = row.querySelector('.category-select');
+                    selectElement.value = trans.category;
+                    selectElement.addEventListener('change', (event) => {
+                        trans.category = event.target.value;
+                        updateDashboard();
+                        if (hideCategorizedToggle.checked && trans.category !== 'Não categorizado') {
+                            event.target.closest('tr').classList.add('hidden');
+                        }
+                    });
+                    transactionsBody.appendChild(row);
                 });
             });
 
-            Promise.all(filePromises)
-                .then(results => {
-                    parsedOfxTransactions = results.flat();
-                    if (parsedOfxTransactions.length > 0) { showToast(`${parsedOfxTransactions.length} transações carregadas.`, false); } 
-                    else { showToast('Nenhuma transação válida encontrada.', true); }
-                })
-                .catch(error => showToast(`Erro ao processar: ${error.message}`, true));
-        });
-
-        ofxForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const accountId = ofxbank_accountselect.value;
-            if (!accountId || parsedOfxTransactions.length === 0) { showToast('Selecione conta e arquivo válidos.', true); return; }
-
-            const transactionsToInsert = parsedOfxTransactions.map(tx => ({ ...tx, account_id: accountId, user_id: currentUser.id }));
-            const { error } = await supabaseClient.from('transactions').insert(transactionsToInsert);
-
-            if (error) {
-                console.error("Error importing transactions:", error);
-                showToast(`Erro: ${error.message} (código: ${error.code})`, true);
-            } 
-            else {
-                showToast(`${transactionsToInsert.length} transações importadas!`, false);
-                hideModal(ofxModal);
-                ofxForm.reset();
-                parsedOfxTransactions = [];
-                await loadInitialData();
-                updateDashboard();
-            }
-        });
-
-        function parseOfx(ofxContent) {
-            const transactions = [];
-            const transactionBlocks = ofxContent.split('<STMTTRN>');
-            if (transactionBlocks.length <= 1) throw new Error("Formato OFX inválido.");
-            for (let i = 1; i < transactionBlocks.length; i++) {
-                const block = transactionBlocks[i];
-                const dateMatch = block.match(/<DTPOSTED>([0-9]+)/);
-                const amountMatch = block.match(/<TRNAMT>([-.0-9]+)/);
-                const memoMatch = block.match(/<MEMO>([^<]+)/);
-                if (dateMatch && amountMatch && memoMatch) {
-                    const ds = dateMatch[1];
-                    transactions.push({
-                        date: `${ds.substring(0, 4)}-${ds.substring(4, 6)}-${ds.substring(6, 8)}`,
-                        amount: parseFloat(amountMatch[1]),
-                        description: memoMatch[1].trim().replace(/&amp;/g, '&'),
-                    });
-                }
-            }
-            return transactions;
+            noTransactionsMessage.classList.add('hidden');
+            transactionsTable.classList.remove('hidden');
+            renderPaginationControls(totalPages);
         }
+        
+        function updateMonthNavigator() {
+            const monthName = currentDisplayDate.toLocaleString('pt-BR', { month: 'long' });
+            monthDisplay.textContent = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${currentDisplayDate.getFullYear()}`;
+        }
+
+        function renderPaginationControls(totalPages) {
+            if (totalPages <= 1) {
+                paginationControls.classList.add('hidden');
+                return;
+            }
+            paginationControls.classList.remove('hidden');
+            pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+            prevPageBtn.disabled = currentPage === 1;
+            nextPageBtn.disabled = currentPage === totalPages;
+        }
+
+        function filterCategorizedTransactions() {
+            const isChecked = hideCategorizedToggle.checked;
+            transactionsBody.querySelectorAll('tr').forEach(row => {
+                if (row.classList.contains('summary-row')) {
+                    row.classList.remove('hidden');
+                    return;
+                }
+                const category = row.querySelector('.category-select')?.value;
+                if (isChecked && category && category !== 'Não categorizado') {
+                    row.classList.add('hidden');
+                } else {
+                    row.classList.remove('hidden');
+                }
+            });
+        }
+        
+        function updateDashboard() {
+            updateSummaryDashboard();
+            updateCharts();
+        }
+
+        function updateSummaryDashboard() {
+            const allTransactions = userAccounts.flatMap(acc => acc.transactions);
+            
+            let totalIncome = 0;
+            let totalExpenses = 0;
+            let creditCardExpenses = 0;
+
+            allTransactions.forEach(trans => {
+                if (trans.amount > 0) {
+                    totalIncome += trans.amount;
+                } else {
+                    totalExpenses += trans.amount;
+                }
+            });
+
+            const creditCardAccounts = userAccounts.filter(acc => acc.type === 'Cartão de Crédito');
+            creditCardAccounts.forEach(acc => {
+                acc.transactions.forEach(trans => {
+                    if (trans.amount < 0) {
+                        creditCardExpenses += trans.amount;
+                    }
+                });
+            });
+
+            const totalInitialBalance = userAccounts.reduce((sum, acc) => sum + acc.initialBalance, 0);
+            const currentTotalBalance = totalInitialBalance + totalIncome + totalExpenses;
+
+            document.getElementById('summary-balance').textContent = formatCurrency(currentTotalBalance);
+            document.getElementById('summary-income').textContent = formatCurrency(totalIncome);
+            document.getElementById('summary-expenses').textContent = formatCurrency(Math.abs(totalExpenses));
+            document.getElementById('summary-credit-card').textContent = formatCurrency(Math.abs(creditCardExpenses));
+        }
+
+        function updateCharts() {
+            const allTransactions = userAccounts.flatMap(acc => acc.transactions);
+            const expenseCategoryTotals = {};
+            const incomeCategoryTotals = {};
+            let totalExpenses = 0;
+            let totalIncome = 0;
+
+            allTransactions.forEach(trans => {
+                if (trans.amount < 0) {
+                    totalExpenses += Math.abs(trans.amount);
+                    if (trans.category !== 'Não categorizado') {
+                        expenseCategoryTotals[trans.category] = (expenseCategoryTotals[trans.category] || 0) + Math.abs(trans.amount);
+                    }
+                } else {
+                    totalIncome += trans.amount;
+                    if (trans.category !== 'Não categorizado') {
+                        incomeCategoryTotals[trans.category] = (incomeCategoryTotals[trans.category] || 0) + trans.amount;
+                    }
+                }
+            });
+
+            renderExpenseChart(Object.keys(expenseCategoryTotals), Object.values(expenseCategoryTotals));
+            renderIncomeChart(Object.keys(incomeCategoryTotals), Object.values(incomeCategoryTotals));
+            renderBalanceChart(totalIncome, totalExpenses);
+        }
+        
+        function renderChart(canvas, noDataEl, chartInstance, config) {
+            const hasData = config.data.labels.length > 0 && config.data.datasets[0].data.reduce((a, b) => a + b, 0) > 0;
+            if (!hasData) {
+                noDataEl.classList.remove('hidden');
+                canvas.classList.add('hidden');
+                if (chartInstance) chartInstance.destroy();
+                return null;
+            }
+            noDataEl.classList.add('hidden');
+            canvas.classList.remove('hidden');
+            if (chartInstance) chartInstance.destroy();
+            const ctx = canvas.getContext('2d');
+            return new Chart(ctx, config);
+        }
+
+        function renderExpenseChart(labels, data) { const config = { type: 'pie', data: { labels: labels, datasets: [{ label: 'Despesas', data: data, backgroundColor: ['#FF6384', '#FF9F40', '#FFCD56', '#C84B31', '#D44000', '#E56717'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } } }; expenseChart = renderChart(document.getElementById('expense-chart'), document.getElementById('no-expense-data'), expenseChart, config); }
+        function renderIncomeChart(labels, data) { const config = { type: 'pie', data: { labels: labels, datasets: [{ label: 'Receitas', data: data, backgroundColor: ['#4BC0C0', '#36A2EB', '#9966FF', '#46BFBD', '#5AD3D1', '#2B7A78'], hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } } }; incomeChart = renderChart(document.getElementById('income-chart'), document.getElementById('no-income-data'), incomeChart, config); }
+        function renderBalanceChart(income, expenses) { const config = { type: 'doughnut', data: { labels: ['Receitas', 'Despesas'], datasets: [{ label: 'Balanço', data: [income, Math.abs(expenses)], backgroundColor: ['#4BC0C0', '#FF6384'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } } }; balanceChart = renderChart(document.getElementById('balance-chart'), document.getElementById('no-balance-data'), balanceChart, config); }
+        
+        function formatCurrency(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function showError(message) { errorText.textContent = message; errorMessage.classList.remove('hidden'); loadingSpinner.classList.add('hidden'); transactionsTable.classList.add('hidden'); noTransactionsMessage.classList.remove('hidden'); }
+        function resetOFXUI() { errorMessage.classList.add('hidden'); noTransactionsMessage.classList.remove('hidden'); transactionsTable.classList.add('hidden'); transactionsBody.innerHTML = ''; fileNameDisplay.textContent = 'Nenhum arquivo selecionado.'; hideCategorizedToggle.checked = false; paginationControls.classList.add('hidden');}
+        
+        function calculatePlanning() {
+            const income = parseFloat(monthlyIncomeInput.value) || 0;
+            monthlyPlan.income = income;
+            
+            let totalPlanned = 0;
+            document.querySelectorAll('.planning-category-input').forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                totalPlanned += value;
+                monthlyPlan.categoryBudgets[input.dataset.category] = value;
+            });
+            
+            planningTotalPlannedEl.textContent = formatCurrency(totalPlanned);
+            planningBudgetTotalEl.textContent = formatCurrency(income);
+
+            renderPlanningChart(totalPlanned, income);
+        }
+
+        planningForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            calculatePlanning(); // Garante que os dados mais recentes sejam salvos
+            planningSuccessMessage.classList.remove('hidden');
+            setTimeout(() => planningSuccessMessage.classList.add('hidden'), 3000);
+        });
+        monthlyIncomeInput.addEventListener('input', calculatePlanning);
+
+        function renderPlanningCategories() {
+            planningCategoryList.innerHTML = '';
+            EXPENSE_CATEGORIES.forEach(category => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label class="block text-sm font-medium text-gray-700">${category}</label>
+                    <input type="number" data-category="${category}" class="planning-category-input mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="R$ 0,00">
+                `;
+                planningCategoryList.appendChild(div);
+            });
+
+            document.querySelectorAll('.planning-category-input').forEach(input => {
+                input.addEventListener('input', calculatePlanning);
+            });
+        }
+
+        function renderPlanningChart(planned, total) {
+            const remaining = Math.max(0, total - planned);
+            const data = {
+                labels: ['Planejado', 'Restante'],
+                datasets: [{
+                    data: [planned, remaining],
+                    backgroundColor: ['#4f46e5', '#e5e7eb'],
+                    borderWidth: 0,
+                }]
+            };
+            const config = {
+                type: 'doughnut',
+                data: data,
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: { legend: { display: false } }
+                }
+            };
+            if (planningChart) planningChart.destroy();
+            planningChart = new Chart(document.getElementById('planning-chart').getContext('2d'), config);
+        }
+
+        settingsForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const appearance = settingsAppearance.value;
+            if (appearance === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            settingsSuccessMessage.classList.remove('hidden');
+            setTimeout(() => settingsSuccessMessage.classList.add('hidden'), 3000);
+        });
+
+        // Inicialização
+        function initializeApp() {
+            renderBankList();
+            bankSearchInput.addEventListener('input', (e) => renderBankList(e.target.value));
+            renderAccounts();
+            renderCreditCards();
+            renderGoals();
+            renderPlanningCategories();
+            updateDashboard();
+            showContent('dashboard-content');
+        }
+
+        function renderBankList(filter = '') {
+            bankListEl.innerHTML = '';
+            const filteredBanks = BANKS.filter(bank => bank.name.toLowerCase().includes(filter.toLowerCase()));
+
+            filteredBanks.forEach(bank => {
+                const bankItem = document.createElement('div');
+                bankItem.className = 'flex items-center p-3 hover:bg-gray-100 rounded-lg cursor-pointer';
+                bankItem.innerHTML = `<div class="w-8 h-8 mr-4">${bank.logo}</div><span class="font-medium">${bank.name}</span>`;
+                bankItem.addEventListener('click', () => {
+                    document.getElementById('account-bank').value = bank.name;
+                    modalStep1.classList.add('hidden');
+                    modalStep2.classList.remove('hidden');
+                });
+                bankListEl.appendChild(bankItem);
+            });
+        }
+
+        initializeApp();
 
     </script>
 </body>
