@@ -116,6 +116,7 @@
                         <li><a href="#" data-target="planning-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg> Planejamento</a></li>
                         <li><a href="#" data-target="reports-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Relatórios</a></li>
                         <li><a href="#" data-target="goals-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg> Metas</a></li>
+                        <li><a href="#" data-target="categories-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg> Categorias</a></li>
                         <li><a href="#" data-target="settings-content" class="sidebar-link flex items-center px-6 py-3 text-gray-700 hover:bg-gray-200"><svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> Configurações</a></li>
                     </ul>
                 </div>
@@ -338,6 +339,19 @@
                         </div>
                     </div>
 
+                    <!-- Seção Categorias -->
+                    <div id="categories-content" class="app-content hidden">
+                        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-semibold">Gerenciar Categorias</h2>
+                                <button id="add-category-btn" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">Adicionar Categoria</button>
+                            </div>
+                            <div id="categories-list" class="space-y-2">
+                                <!-- Lista de categorias será inserida aqui -->
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </main>
         </div>
@@ -467,6 +481,35 @@
         </div>
     </div>
 
+    <!-- Modal Adicionar/Editar Categoria -->
+    <div id="category-modal" class="modal-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden opacity-0">
+        <div class="modal-container bg-white w-full max-w-md p-6 rounded-lg shadow-xl transform scale-95">
+            <h2 id="category-modal-title" class="text-2xl font-bold mb-4">Adicionar Nova Categoria</h2>
+            <form id="add-category-form">
+                <input type="hidden" id="category-id">
+                <div class="mb-4">
+                    <label for="category-name" class="block text-sm font-medium text-gray-700">Nome</label>
+                    <input type="text" id="category-name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                </div>
+                <div class="mb-4">
+                    <label for="category-type" class="block text-sm font-medium text-gray-700">Tipo</label>
+                    <select id="category-type" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md">
+                        <option value="expense">Despesa</option>
+                        <option value="income">Receita</option>
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label for="category-color" class="block text-sm font-medium text-gray-700">Cor</label>
+                    <input type="color" id="category-color" class="mt-1 block w-full h-10 px-1 py-1 border border-gray-300 rounded-md" value="#FF6384">
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" id="cancel-category-btn" class="bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-400">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 
     <script>
         // --- Variáveis Globais e Constantes ---
@@ -483,8 +526,19 @@
         let currentDisplayDate = new Date();
         const TRANSACTIONS_PER_PAGE = 50;
 
-        const CATEGORIES = ['Não categorizado', 'Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Educação', 'Investimentos', 'Salário', 'Outras Receitas', 'Outras Despesas'];
-        const EXPENSE_CATEGORIES = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Lazer', 'Educação', 'Investimentos', 'Outras Despesas'];
+        let CATEGORIES = [
+            { id: 1, name: 'Moradia', type: 'expense', color: '#FF6384' },
+            { id: 2, name: 'Alimentação', type: 'expense', color: '#FF9F40' },
+            { id: 3, name: 'Transporte', type: 'expense', color: '#FFCD56' },
+            { id: 4, name: 'Saúde', type: 'expense', color: '#4BC0C0' },
+            { id: 5, name: 'Lazer', type: 'expense', color: '#9966FF' },
+            { id: 6, name: 'Educação', type: 'expense', color: '#C9CBCF' },
+            { id: 7, name: 'Investimentos', type: 'expense', color: '#36A2EB' },
+            { id: 8, name: 'Outras Despesas', type: 'expense', color: '#F7464A' },
+            { id: 9, name: 'Salário', type: 'income', color: '#46BFBD' },
+            { id: 10, name: 'Outras Receitas', type: 'income', color: '#5AD3D1' },
+        ];
+        
         const AUTO_CATEGORIZATION_MAP = {
             'Alimentação': ['IFOOD', 'RESTAURANTE', 'MERCADO', 'PADARIA', 'LANCHONETE', 'SUPERMERCADO', 'HIPERMERCADO'],
             'Transporte': ['UBER', '99', 'POSTO', 'GASOLINA', 'ESTACIONAMENTO', 'PASSAGEM AEREA', 'ONIBUS', 'METRO'],
@@ -555,6 +609,11 @@
         const clientCpfCnpjInput = document.getElementById('client-cpf-cnpj');
         const cnpjLoader = document.getElementById('cnpj-loader');
         const cnpjError = document.getElementById('cnpj-error');
+
+        const categoryModal = document.getElementById('category-modal');
+        const addCategoryBtn = document.getElementById('add-category-btn');
+        const cancelCategoryBtn = document.getElementById('cancel-category-btn');
+        const addCategoryForm = document.getElementById('add-category-form');
 
         const sidebarLinks = document.querySelectorAll('.sidebar-link');
         const contentSections = document.querySelectorAll('.app-content');
@@ -630,6 +689,8 @@
         manageClientsBtn.addEventListener('click', () => openModal(clientsModal));
         closeClientsBtn.addEventListener('click', () => closeModal(clientsModal));
         closeContractDetailsBtn.addEventListener('click', () => closeModal(contractDetailsModal));
+        addCategoryBtn.addEventListener('click', () => openCategoryModal());
+        cancelCategoryBtn.addEventListener('click', () => closeModal(categoryModal));
 
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -685,6 +746,7 @@
         const noGoalsMessage = document.getElementById('no-goals-message');
         const contractsListEl = document.getElementById('contracts-list');
         const noContractsMessage = document.getElementById('no-contracts-message');
+        const categoriesListEl = document.getElementById('categories-list');
 
         addAccountForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -1088,9 +1150,11 @@
 
         function autoCategorize(description) {
             const upperDescription = description.toUpperCase();
-            for (const category in AUTO_CATEGORIZATION_MAP) {
-                for (const keyword of AUTO_CATEGORIZATION_MAP[category]) {
-                    if (upperDescription.includes(keyword)) { return category; }
+            for (const category of CATEGORIES) {
+                if (AUTO_CATEGORIZATION_MAP[category.name]) {
+                    for (const keyword of AUTO_CATEGORIZATION_MAP[category.name]) {
+                        if (upperDescription.includes(keyword)) { return category.name; }
+                    }
                 }
             }
             return 'Não categorizado';
@@ -1236,7 +1300,7 @@
                     row.dataset.transactionId = trans.id;
                     const amountColor = trans.amount < 0 ? 'text-red-600' : 'text-green-600';
                     const formattedAmount = formatCurrency(trans.amount);
-                    row.innerHTML = `<td class="px-6 py-4"></td><td class="px-6 py-4 text-sm text-gray-800 font-medium">${trans.description}</td><td class="px-6 py-4 text-sm text-right font-semibold ${amountColor}">${formattedAmount}</td><td class="px-6 py-4 text-sm"><select class="category-select bg-white border border-gray-300 rounded-md shadow-sm p-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500">${CATEGORIES.map(cat => `<option value="${cat}">${cat}</option>`).join('')}</select></td>`;
+                    row.innerHTML = `<td class="px-6 py-4"></td><td class="px-6 py-4 text-sm text-gray-800 font-medium">${trans.description}</td><td class="px-6 py-4 text-sm text-right font-semibold ${amountColor}">${formattedAmount}</td><td class="px-6 py-4 text-sm"><select class="category-select bg-white border border-gray-300 rounded-md shadow-sm p-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500">${CATEGORIES.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('')}</select></td>`;
                     const selectElement = row.querySelector('.category-select');
                     selectElement.value = trans.category;
                     selectElement.addEventListener('change', (event) => {
@@ -1404,11 +1468,12 @@
 
         function renderPlanningCategories() {
             planningCategoryList.innerHTML = '';
-            EXPENSE_CATEGORIES.forEach(category => {
+            const expenseCategories = CATEGORIES.filter(c => c.type === 'expense');
+            expenseCategories.forEach(category => {
                 const div = document.createElement('div');
                 div.innerHTML = `
-                    <label class="block text-sm font-medium text-gray-700">${category}</label>
-                    <input type="number" data-category="${category}" class="planning-category-input mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="R$ 0,00">
+                    <label class="block text-sm font-medium text-gray-700">${category.name}</label>
+                    <input type="number" data-category="${category.name}" class="planning-category-input mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="R$ 0,00">
                 `;
                 planningCategoryList.appendChild(div);
             });
@@ -1465,25 +1530,26 @@
             });
 
             const expenseTotals = {};
-            EXPENSE_CATEGORIES.forEach(cat => expenseTotals[cat] = 0);
+            const expenseCategories = CATEGORIES.filter(c => c.type === 'expense');
+            expenseCategories.forEach(cat => expenseTotals[cat.name] = 0);
 
             monthlyTransactions.forEach(t => {
-                if(t.amount < 0 && EXPENSE_CATEGORIES.includes(t.category)) {
+                if(t.amount < 0 && expenseTotals.hasOwnProperty(t.category)) {
                     expenseTotals[t.category] += Math.abs(t.amount);
                 }
             });
 
             reportCategoryList.innerHTML = '';
-            EXPENSE_CATEGORIES.forEach(cat => {
-                const planned = monthlyPlan.categoryBudgets[cat] || 0;
-                const spent = expenseTotals[cat];
+            expenseCategories.forEach(cat => {
+                const planned = monthlyPlan.categoryBudgets[cat.name] || 0;
+                const spent = expenseTotals[cat.name];
                 const percentage = planned > 0 ? Math.min((spent / planned) * 100, 100) : 0;
                 
                 const item = document.createElement('div');
                 item.className = 'mb-4';
                 item.innerHTML = `
                     <div class="flex justify-between items-center mb-1">
-                        <span class="font-medium">${cat}</span>
+                        <span class="font-medium">${cat.name}</span>
                         <span>${formatCurrency(spent)} / ${formatCurrency(planned)}</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2.5">
@@ -1524,6 +1590,7 @@
             renderGoals();
             renderPlanningCategories();
             renderClients();
+            renderCategories();
             updateDashboard();
             showContent('dashboard-content');
         }
