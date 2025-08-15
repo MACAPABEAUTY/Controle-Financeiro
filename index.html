@@ -1293,7 +1293,19 @@
                     row.dataset.transactionId = trans.id;
                     const amountColor = trans.amount < 0 ? 'text-red-600' : 'text-green-600';
                     const formattedAmount = formatCurrency(trans.amount);
-                    row.innerHTML = `<td class="px-6 py-4"></td><td class="px-6 py-4 text-sm text-gray-800 font-medium">${trans.description}</td><td class="px-6 py-4 text-sm text-right font-semibold ${amountColor}">${formattedAmount}</td><td class="px-6 py-4 text-sm"><select class="category-select bg-white border border-gray-300 rounded-md shadow-sm p-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500">${CATEGORIES.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('')}</select></td>`;
+                    const optionsHtml = ['Não categorizado', ...CATEGORIES.map(c => c.name)]
+                        .map(name => `<option value="${name}">${name}</option>`).join('');
+
+                    row.innerHTML = `
+                        <td class="px-6 py-4"></td>
+                        <td class="px-6 py-4 text-sm text-gray-800 font-medium">${trans.description}</td>
+                        <td class="px-6 py-4 text-sm text-right font-semibold ${amountColor}">${formattedAmount}</td>
+                        <td class="px-6 py-4 text-sm">
+                            <select class="category-select bg-white border border-gray-300 rounded-md shadow-sm p-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            ${optionsHtml}
+                            </select>
+                        </td>
+                    `;
                     const selectElement = row.querySelector('.category-select');
                     selectElement.value = trans.category;
                     selectElement.addEventListener('change', (event) => {
@@ -1573,6 +1585,90 @@
             };
             reportChart = renderChart(document.getElementById('report-chart'), document.getElementById('no-report-data'), reportChart, config);
         }
+        
+        // --- Categorias (CRUD e UI) ---
+        function renderCategories() {
+            categoriesListEl.innerHTML = '';
+
+            if (!Array.isArray(CATEGORIES) || CATEGORIES.length === 0) {
+                categoriesListEl.innerHTML = '<p class="text-gray-500">Nenhuma categoria cadastrada.</p>';
+                return;
+            }
+
+            CATEGORIES.forEach(cat => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between p-3 rounded border bg-white';
+                row.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="inline-block w-4 h-4 rounded" style="background-color:${cat.color}"></span>
+                    <div>
+                    <p class="font-medium">${cat.name}</p>
+                    <p class="text-xs text-gray-500">${cat.type === 'expense' ? 'Despesa' : 'Receita'}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="edit-cat px-3 py-1 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-700" data-id="${cat.id}">Editar</button>
+                    <button class="del-cat px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700" data-id="${cat.id}">Excluir</button>
+                </div>
+                `;
+                categoriesListEl.appendChild(row);
+            });
+
+            // Ações
+            categoriesListEl.querySelectorAll('.edit-cat').forEach(btn => {
+                btn.addEventListener('click', () => {
+                const id = parseInt(btn.dataset.id);
+                const cat = CATEGORIES.find(c => c.id === id);
+                openCategoryModal(cat);
+                });
+            });
+
+            categoriesListEl.querySelectorAll('.del-cat').forEach(btn => {
+                btn.addEventListener('click', () => {
+                const id = parseInt(btn.dataset.id);
+                CATEGORIES = CATEGORIES.filter(c => c.id !== id);
+                renderCategories();
+                renderPlanningCategories();
+                updateDashboard();
+                });
+            });
+        }
+
+        function openCategoryModal(category = null) {
+            document.getElementById('category-modal-title').textContent =
+                category ? 'Editar Categoria' : 'Adicionar Nova Categoria';
+            document.getElementById('category-id').value = category ? category.id : '';
+            document.getElementById('category-name').value = category ? category.name : '';
+            document.getElementById('category-type').value = category ? category.type : 'expense';
+            document.getElementById('category-color').value = category ? category.color : '#FF6384';
+            openModal(categoryModal);
+        }
+        
+        addCategoryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('category-id').value;
+            const name = document.getElementById('category-name').value.trim();
+            const type = document.getElementById('category-type').value;
+            const color = document.getElementById('category-color').value;
+
+            if (!name) return;
+
+            if (id) {
+                const idx = CATEGORIES.findIndex(c => String(c.id) === String(id));
+                if (idx >= 0) {
+                CATEGORIES[idx] = { ...CATEGORIES[idx], name, type, color };
+                }
+            } else {
+                const newCat = { id: Date.now(), name, type, color };
+                CATEGORIES.push(newCat);
+            }
+
+            renderCategories();
+            renderPlanningCategories();
+            updateDashboard();
+            addCategoryForm.reset();
+            closeModal(categoryModal);
+        });
 
         // Inicialização
         function initializeApp() {
